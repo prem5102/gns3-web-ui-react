@@ -1,4 +1,4 @@
-import { AlertCircle, Check, RefreshCw } from "lucide-react";
+import { AlertCircle, Check, Moon, RefreshCw, Sun } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,6 +26,8 @@ export function SettingsModal() {
 		controllerUsername,
 		setControllerConfig,
 		addEvent,
+		theme,
+		setTheme,
 	} = useUIStore();
 
 	const [url, setUrl] = useState(controllerUrl);
@@ -91,13 +93,40 @@ export function SettingsModal() {
 		<Dialog open={settingsModalOpen} onOpenChange={setSettingsModalOpen}>
 			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
-					<DialogTitle>Controller Settings</DialogTitle>
+					<DialogTitle>Settings & Preferences</DialogTitle>
 					<DialogDescription>
-						Configure GNS3 Controller URL and authentication credentials.
+						Configure application appearance and GNS3 controller connection.
 					</DialogDescription>
 				</DialogHeader>
 
 				<div className="flex flex-col space-y-4 py-2 text-xs">
+					<div className="flex flex-col space-y-1.5 pb-2 border-b border-border/70">
+						<Label className="text-xs font-semibold text-foreground">
+							Theme Appearance
+						</Label>
+						<div className="grid grid-cols-2 gap-2">
+							<Button
+								type="button"
+								variant={theme === "dark" ? "default" : "outline"}
+								size="sm"
+								onClick={() => setTheme("dark")}
+								className="flex items-center justify-center gap-2 h-8 text-xs font-medium"
+							>
+								<Moon className="w-3.5 h-3.5" />
+								<span>Dark Mode</span>
+							</Button>
+							<Button
+								type="button"
+								variant={theme === "light" ? "default" : "outline"}
+								size="sm"
+								onClick={() => setTheme("light")}
+								className="flex items-center justify-center gap-2 h-8 text-xs font-medium"
+							>
+								<Sun className="w-3.5 h-3.5" />
+								<span>Light Mode</span>
+							</Button>
+						</div>
+					</div>
 					<div className="flex flex-col space-y-1.5">
 						<Label htmlFor="ctrl-url" className="text-xs">
 							Controller Base URL / Proxy Path

@@ -50,6 +50,13 @@ describe("Topology Live Dragging & Device Node", () => {
 		expect(screen.getByText("R1")).toBeDefined();
 		expect(screen.getByText(":5000")).toBeDefined();
 
+		// Verify GNS3 SVG symbol image is rendered
+		const symbolImg = screen.getByRole("img", { name: "R1" });
+		expect(symbolImg).toBeDefined();
+		expect(symbolImg.getAttribute("src")).toBe(
+			"/symbols/blue/sq_router_blue.svg",
+		);
+
 		// Verify grab cursor styling is present for dragging
 		const rootDiv = container.querySelector(".cursor-grab");
 		expect(rootDiv).toBeDefined();

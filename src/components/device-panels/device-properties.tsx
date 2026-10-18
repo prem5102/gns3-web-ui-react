@@ -19,6 +19,7 @@ import {
 	useStopNode,
 	useUpdateNode,
 } from "@/features/nodes/use-nodes";
+import { resolveNodeSymbol } from "@/lib/symbols";
 import { useTopologyStore } from "@/stores/topology-store";
 import { useUIStore } from "@/stores/ui-store";
 import type { GNS3Link, GNS3Node } from "@/types/gns3";
@@ -49,6 +50,7 @@ export function DeviceProperties({
 
 	const isStarted = node.status === "started";
 	const isSuspended = node.status === "suspended";
+	const symbolSrc = resolveNodeSymbol(node);
 
 	// Find all links connected to this node
 	const connectedLinks = links.filter((l) =>
@@ -74,7 +76,7 @@ export function DeviceProperties({
 
 	return (
 		<div className="flex flex-col space-y-4 text-xs">
-			{/* Header with Name & Status */}
+			{/* Header with Symbol, Name & Status */}
 			<div className="flex flex-col space-y-2 border-b border-border/70 pb-3">
 				<div className="flex items-center justify-between">
 					<Badge
@@ -88,32 +90,44 @@ export function DeviceProperties({
 					</span>
 				</div>
 
-				{isEditingName ? (
-					<div className="flex items-center gap-1.5 mt-1">
-						<Input
-							value={name}
-							onChange={(e) => setName(e.target.value)}
-							onKeyDown={(e) => e.key === "Enter" && handleSaveName()}
-							className="h-7 text-xs font-semibold"
-							autoFocus
+				<div className="flex items-center gap-2.5 pt-1">
+					<div className="relative w-10 h-10 shrink-0 flex items-center justify-center">
+						<img
+							src={symbolSrc}
+							alt={node.name}
+							className="w-full h-full object-contain pointer-events-none select-none"
 						/>
-						<Button size="icon-xs" variant="default" onClick={handleSaveName}>
-							<Check className="w-3 h-3" />
-						</Button>
 					</div>
-				) : (
-					<h3
-						onClick={() => setIsEditingName(true)}
-						className="text-base font-bold text-foreground hover:text-primary cursor-pointer truncate"
-						title="Click to rename"
-					>
-						{node.name}
-					</h3>
-				)}
 
-				<span className="text-[10px] text-muted-foreground font-mono">
-					ID: {node.node_id}
-				</span>
+					<div className="flex flex-col min-w-0 flex-1">
+						{isEditingName ? (
+							<div className="flex items-center gap-1.5">
+								<Input
+									value={name}
+									onChange={(e) => setName(e.target.value)}
+									onKeyDown={(e) => e.key === "Enter" && handleSaveName()}
+									className="h-7 text-xs font-semibold"
+									autoFocus
+								/>
+								<Button size="icon-xs" variant="default" onClick={handleSaveName}>
+									<Check className="w-3 h-3" />
+								</Button>
+							</div>
+						) : (
+							<h3
+								onClick={() => setIsEditingName(true)}
+								className="text-base font-bold text-foreground hover:text-primary cursor-pointer truncate"
+								title="Click to rename"
+							>
+								{node.name}
+							</h3>
+						)}
+
+						<span className="text-[10px] text-muted-foreground font-mono truncate">
+							ID: {node.node_id.substring(0, 8)}...
+						</span>
+					</div>
+				</div>
 			</div>
 
 			{/* Action Buttons */}

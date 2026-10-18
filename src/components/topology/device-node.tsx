@@ -11,8 +11,9 @@ import {
 	Square,
 	Terminal,
 } from "lucide-react";
-import { memo } from "react";
+import { memo, useState } from "react";
 import { useStartNode, useStopNode } from "@/features/nodes/use-nodes";
+import { resolveNodeSymbol } from "@/lib/symbols";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
 import type { GNS3Node } from "@/types/gns3";
@@ -60,9 +61,10 @@ export const DeviceNode = memo(({ data, selected }: NodeProps) => {
 	const startMutation = useStartNode(node.project_id);
 	const stopMutation = useStopNode(node.project_id);
 
+	const [imgError, setImgError] = useState(false);
+	const symbolSrc = resolveNodeSymbol(node);
 	const IconComponent = getDeviceIcon(node.node_type, node.name);
 	const isStarted = node.status === "started";
-	const isSuspended = node.status === "suspended";
 
 	return (
 		<div
@@ -149,44 +151,32 @@ export const DeviceNode = memo(({ data, selected }: NodeProps) => {
 				</button>
 			</div>
 
-			{/* Main Node Graphic Card */}
+			{/* Main Node Graphic */}
 			<div
 				className={cn(
-					"relative flex items-center justify-center w-14 h-14 rounded-xl border bg-card/90 shadow-sm transition-[border-color,box-shadow,transform] duration-150",
-					selected
-						? "border-primary ring-2 ring-primary/40 shadow-primary/20 scale-105"
-						: "border-border/80 hover:border-border hover:shadow-md",
+					"relative flex items-center justify-center w-12 h-12 transition-transform duration-150",
+					selected && "scale-105 filter drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]",
 				)}
 			>
-				{/* Device Icon */}
-				<IconComponent
-					className={cn(
-						"w-7 h-7 transition-colors",
-						isStarted
-							? "text-primary"
-							: isSuspended
-								? "text-amber-500"
-								: "text-muted-foreground",
-					)}
-				/>
-
-				{/* Status Indicator Dot */}
-				<div className="absolute top-1 right-1 flex items-center justify-center">
-					{isStarted && (
-						<span className="absolute inline-flex h-2.5 w-2.5 animate-ping rounded-full bg-emerald-400 opacity-75" />
-					)}
-					<span
+				{/* Device Symbol (GNS3 SVG) with Lucide fallback */}
+				{!imgError ? (
+					<img
+						src={symbolSrc}
+						alt={node.name}
+						onError={() => setImgError(true)}
+						className="w-12 h-12 object-contain pointer-events-none select-none transition-transform group-hover:scale-105"
+						draggable={false}
+					/>
+				) : (
+					<IconComponent
 						className={cn(
-							"relative inline-flex h-2 w-2 rounded-full border border-background",
-							isStarted
-								? "bg-emerald-500"
-								: isSuspended
-									? "bg-amber-500"
-									: "bg-zinc-400 dark:bg-zinc-600",
+							"w-8 h-8 transition-colors",
+							isStarted ? "text-blue-500" : "text-zinc-400",
 						)}
 					/>
-				</div>
+				)}
 			</div>
+
 
 			{/* Device Name Label */}
 			<div className="mt-1.5 flex flex-col items-center">

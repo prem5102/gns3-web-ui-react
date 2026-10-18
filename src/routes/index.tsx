@@ -5,7 +5,6 @@ import { useEffect } from "react";
 import { BottomPanel } from "@/components/layout/bottom-panel";
 import { RightPanel } from "@/components/layout/right-panel";
 import { Sidebar } from "@/components/layout/sidebar";
-import { TopNav } from "@/components/layout/top-nav";
 import { TopologyCanvas } from "@/components/topology/topology-canvas";
 import { Badge } from "@/components/ui/badge";
 import { useControllerNotifications } from "@/features/controller/use-controller";
@@ -50,9 +49,6 @@ function MainWorkspace() {
 		<div
 			className={`flex flex-col h-screen w-screen overflow-hidden bg-background ${theme}`}
 		>
-			{/* Top Navigation Bar */}
-			<TopNav />
-
 			{/* Main Workspace Center Area */}
 			<div className="flex flex-1 overflow-hidden relative">
 				{/* Left Collapsible Sidebar */}

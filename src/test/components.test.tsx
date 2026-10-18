@@ -1,7 +1,29 @@
 import { render, screen } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, expect, it, vi } from "vitest";
+import { Sidebar } from "@/components/layout/sidebar";
+import { NodeModelModal } from "@/components/topology/node-model-modal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+
+vi.mock("@/features/nodes/use-nodes", () => ({
+	useProjectNodes: () => ({ data: [] }),
+	useStartNode: () => ({ mutate: vi.fn() }),
+	useStopNode: () => ({ mutate: vi.fn() }),
+}));
+
+vi.mock("@/features/projects/use-projects", () => ({
+	useProjects: () => ({ data: [] }),
+	useOpenProject: () => ({ mutate: vi.fn() }),
+	useDeleteProject: () => ({ mutate: vi.fn() }),
+	useCreateProject: () => ({ mutate: vi.fn() }),
+}));
+
+vi.mock("@/features/templates/use-templates", () => ({
+	useTemplates: () => ({ data: [] }),
+	useCreateNodeFromTemplate: () => ({ mutate: vi.fn(), isPending: false }),
+}));
 
 describe("UI Primitives", () => {
 	it("renders Badge with custom variants", () => {
@@ -19,5 +41,73 @@ describe("UI Primitives", () => {
 		const button = screen.getByText("Click Me");
 		button.click();
 		expect(handleClick).toHaveBeenCalledTimes(1);
+	});
+
+	it("renders ScrollArea with viewport data slot", () => {
+		const { container } = render(
+			<ScrollArea className="h-40">
+				<div>Scrollable Item 1</div>
+				<div>Scrollable Item 2</div>
+			</ScrollArea>,
+		);
+
+		const scrollArea = container.querySelector('[data-slot="scroll-area"]');
+		expect(scrollArea).toBeDefined();
+		const viewport = container.querySelector(
+			'[data-slot="scroll-area-viewport"]',
+		);
+		expect(viewport).toBeDefined();
+		expect(screen.getByText("Scrollable Item 1")).toBeDefined();
+	});
+
+	it("renders NodeModelModal with symbol details and specifications", () => {
+		const mockTemplate = {
+			template_id: "test-tpl-1",
+			name: "Cisco c7200 Router",
+			category: "router",
+			template_type: "dynamips",
+			symbol: "router",
+			compute_id: "local",
+			builtin: true,
+		};
+
+		render(
+			<NodeModelModal
+				template={mockTemplate}
+				open={true}
+				onOpenChange={vi.fn()}
+			/>,
+		);
+
+		expect(screen.getByText("Cisco c7200 Router")).toBeDefined();
+		expect(screen.getByText("Node Model Specifications")).toBeDefined();
+		expect(screen.getByText("Symbol Catalog")).toBeDefined();
+		expect(screen.getByText("Add to Topology")).toBeDefined();
+	});
+
+	it("renders Device Library template nodes inside shadcn ScrollArea component", () => {
+		const queryClient = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+
+		const { container } = render(
+			<QueryClientProvider client={queryClient}>
+				<Sidebar />
+			</QueryClientProvider>,
+		);
+
+		// ScrollArea wrapper must exist in Device Library
+		const scrollArea = container.querySelector('[data-slot="scroll-area"]');
+		expect(scrollArea).toBeDefined();
+
+		const viewport = container.querySelector(
+			'[data-slot="scroll-area-viewport"]',
+		);
+		expect(viewport).toBeDefined();
+
+		// Template nodes (e.g. Cisco c7200 Router) should be rendered inside viewport
+		const routerModel = screen.getByText("Cisco c7200 Router");
+		expect(routerModel).toBeDefined();
+		expect(viewport?.contains(routerModel)).toBe(true);
 	});
 });
