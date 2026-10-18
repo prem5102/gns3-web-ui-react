@@ -1,4 +1,6 @@
 import {
+  Activity,
+  FileCode2,
   Folder,
   Info,
   Layers,
@@ -44,6 +46,12 @@ export function Sidebar() {
     setActiveSidebarTab,
     openConsoleForNode,
     setSettingsModalOpen,
+    bottomPanelOpen,
+    setBottomPanelOpen,
+    activeBottomTab,
+    setActiveBottomTab,
+    openConsoles,
+    events,
   } = useUIStore();
 
   const { activeProjectId, setActiveProjectId, selectedNodeId, selectNode } = useTopologyStore();
@@ -167,7 +175,81 @@ export function Sidebar() {
           })}
         </div>
 
-        <div className="flex flex-col items-center gap-1.5 w-full">
+        {/* Activity Bar Bottom: Console, Config Editor, Events, Settings */}
+        <div className="flex flex-col items-center gap-1 w-full">
+          {/* Console Drawer Toggle */}
+          <button
+            type="button"
+            title={`Consoles (${openConsoles.length})`}
+            onClick={() => {
+              if (bottomPanelOpen && activeBottomTab === "consoles") {
+                setBottomPanelOpen(false);
+              } else {
+                setActiveBottomTab("consoles");
+              }
+            }}
+            className={`w-10 h-10 flex items-center justify-center rounded-md relative transition-colors ${
+              bottomPanelOpen && activeBottomTab === "consoles"
+                ? "text-foreground font-semibold bg-muted/60"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
+            }`}
+          >
+            <Terminal className="w-4 h-4" />
+            {openConsoles.length > 0 && (
+              <span className="absolute top-1 right-1 px-1 min-w-3.5 h-3.5 rounded-full bg-primary/20 text-primary text-[9px] font-bold flex items-center justify-center leading-none">
+                {openConsoles.length}
+              </span>
+            )}
+          </button>
+
+          {/* Config Editor Drawer Toggle */}
+          <button
+            type="button"
+            title="Configuration Editor"
+            onClick={() => {
+              if (bottomPanelOpen && activeBottomTab === "editor") {
+                setBottomPanelOpen(false);
+              } else {
+                setActiveBottomTab("editor");
+              }
+            }}
+            className={`w-10 h-10 flex items-center justify-center rounded-md relative transition-colors ${
+              bottomPanelOpen && activeBottomTab === "editor"
+                ? "text-foreground font-semibold bg-muted/60"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
+            }`}
+          >
+            <FileCode2 className="w-4 h-4" />
+          </button>
+
+          {/* Controller Events Drawer Toggle */}
+          <button
+            type="button"
+            title={`Controller Events (${events.length})`}
+            onClick={() => {
+              if (bottomPanelOpen && activeBottomTab === "events") {
+                setBottomPanelOpen(false);
+              } else {
+                setActiveBottomTab("events");
+              }
+            }}
+            className={`w-10 h-10 flex items-center justify-center rounded-md relative transition-colors ${
+              bottomPanelOpen && activeBottomTab === "events"
+                ? "text-foreground font-semibold bg-muted/60"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
+            }`}
+          >
+            <Activity className="w-4 h-4" />
+            {events.length > 0 && (
+              <span className="absolute top-1 right-1 px-1 min-w-3.5 h-3.5 rounded-full bg-muted-foreground/20 text-muted-foreground text-[9px] font-semibold flex items-center justify-center leading-none">
+                {events.length > 99 ? "99+" : events.length}
+              </span>
+            )}
+          </button>
+
+          <Separator className="w-6 my-0.5" />
+
+          {/* Settings & Preferences */}
           <button
             type="button"
             title="Settings & Preferences"

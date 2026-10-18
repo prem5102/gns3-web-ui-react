@@ -1,23 +1,16 @@
 import {
   Activity,
   ChevronDown,
-  ChevronUp,
   FileCode2,
-  LayoutGrid,
   Terminal as TerminalIcon,
   Trash2,
 } from "lucide-react";
 import type React from "react";
+import { useCallback, useState } from "react";
 import { ConsolePanel } from "@/components/console/console-panel";
 import { ConfigEditor } from "@/components/editor/config-editor";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { type BottomTab, useUIStore } from "@/stores/ui-store";
 
 export function BottomPanel() {
@@ -27,56 +20,93 @@ export function BottomPanel() {
     activeBottomTab,
     setActiveBottomTab,
     bottomPanelHeight,
+    setBottomPanelHeight,
     events,
     clearEvents,
     openConsoles,
   } = useUIStore();
 
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      setIsDragging(true);
+
+      const startY = e.clientY;
+      const startHeight = bottomPanelHeight;
+
+      const onMouseMove = (moveEvent: MouseEvent) => {
+        const deltaY = startY - moveEvent.clientY;
+        const maxHeight =
+          typeof window !== "undefined"
+            ? Math.floor(window.innerHeight * 0.85)
+            : 800;
+        const newHeight = Math.min(Math.max(startHeight + deltaY, 120), maxHeight);
+        setBottomPanelHeight(newHeight);
+      };
+
+      const onMouseUp = () => {
+        setIsDragging(false);
+        window.removeEventListener("mousemove", onMouseMove);
+        window.removeEventListener("mouseup", onMouseUp);
+        document.body.style.removeProperty("cursor");
+        document.body.style.removeProperty("user-select");
+      };
+
+      document.body.style.cursor = "row-resize";
+      document.body.style.userSelect = "none";
+      window.addEventListener("mousemove", onMouseMove);
+      window.addEventListener("mouseup", onMouseUp);
+    },
+    [bottomPanelHeight, setBottomPanelHeight],
+  );
+
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      setIsDragging(true);
+
+      const startY = e.touches[0].clientY;
+      const startHeight = bottomPanelHeight;
+
+      const onTouchMove = (moveEvent: TouchEvent) => {
+        if (moveEvent.touches.length !== 1) return;
+        const deltaY = startY - moveEvent.touches[0].clientY;
+        const maxHeight =
+          typeof window !== "undefined"
+            ? Math.floor(window.innerHeight * 0.85)
+            : 800;
+        const newHeight = Math.min(Math.max(startHeight + deltaY, 120), maxHeight);
+        setBottomPanelHeight(newHeight);
+      };
+
+      const onTouchEnd = () => {
+        setIsDragging(false);
+        window.removeEventListener("touchmove", onTouchMove);
+        window.removeEventListener("touchend", onTouchEnd);
+      };
+
+      window.addEventListener("touchmove", onTouchMove);
+      window.addEventListener("touchend", onTouchEnd);
+    },
+    [bottomPanelHeight, setBottomPanelHeight],
+  );
+
+  const handleDoubleClick = useCallback(() => {
+    if (bottomPanelHeight > 350) {
+      setBottomPanelHeight(280);
+    } else {
+      const expandedHeight =
+        typeof window !== "undefined"
+          ? Math.min(520, Math.floor(window.innerHeight * 0.65))
+          : 500;
+      setBottomPanelHeight(expandedHeight);
+    }
+  }, [bottomPanelHeight, setBottomPanelHeight]);
+
   if (!bottomPanelOpen) {
-    return (
-      <div className="border-t border-border bg-card/90 backdrop-blur-md px-3 py-1 flex items-center justify-between text-xs z-20">
-        <div className="flex items-center gap-1.5">
-          <Button
-            size="xs"
-            variant="ghost"
-            onClick={() => setActiveBottomTab("consoles")}
-            className="gap-1.5 h-6 text-muted-foreground hover:text-foreground"
-          >
-            <TerminalIcon className="w-3.5 h-3.5" />
-            <span>Consoles ({openConsoles.length})</span>
-          </Button>
-
-          <Button
-            size="xs"
-            variant="ghost"
-            onClick={() => setActiveBottomTab("editor")}
-            className="gap-1.5 h-6 text-muted-foreground hover:text-foreground"
-          >
-            <FileCode2 className="w-3.5 h-3.5" />
-            <span>Config Editor</span>
-          </Button>
-
-          <Button
-            size="xs"
-            variant="ghost"
-            onClick={() => setActiveBottomTab("events")}
-            className="gap-1.5 h-6 text-muted-foreground hover:text-foreground"
-          >
-            <Activity className="w-3.5 h-3.5" />
-            <span>Events ({events.length})</span>
-          </Button>
-        </div>
-
-        <Button
-          size="icon-xs"
-          variant="ghost"
-          onClick={() => setBottomPanelOpen(true)}
-          title="Open Drawer"
-        >
-          <ChevronUp className="w-3.5 h-3.5" />
-        </Button>
-      </div>
-    );
+    return null;
   }
 
   const tabs: Array<{
@@ -122,8 +152,38 @@ export function BottomPanel() {
   return (
     <div
       style={{ height: `${bottomPanelHeight}px` }}
-      className="flex flex-col border-t border-border bg-card/95 backdrop-blur-md shadow-xl z-20 transition-all"
+      className={`relative flex flex-col border-t border-border bg-card/95 backdrop-blur-md shadow-xl z-20 ${
+        isDragging ? "transition-none select-none" : "transition-[height]"
+      }`}
     >
+      {/* Top Resizer Handle */}
+      <div
+        role="separator"
+        aria-orientation="horizontal"
+        aria-label="Resize drawer height"
+        title="Drag to resize height (Double-click to expand or reset)"
+        onMouseDown={handleMouseDown}
+        onTouchStart={handleTouchStart}
+        onDoubleClick={handleDoubleClick}
+        className="group absolute -top-1.5 inset-x-0 h-3 flex items-center justify-center cursor-row-resize z-30 touch-none select-none"
+      >
+        {/* Subtle accent bar on hover / drag */}
+        <div
+          className={`w-full h-[2px] transition-colors ${
+            isDragging
+              ? "bg-primary"
+              : "bg-transparent group-hover:bg-primary/70"
+          }`}
+        />
+        {/* Visual Pill Grip Handle */}
+        <div
+          className={`absolute top-1/2 -translate-y-1/2 h-1 rounded-full transition-all ${
+            isDragging
+              ? "w-16 bg-primary shadow-[0_0_8px_rgba(var(--primary),0.6)]"
+              : "w-10 bg-muted-foreground/30 group-hover:w-14 group-hover:bg-primary/80"
+          }`}
+        />
+      </div>
       {/* Tab Navigation Header: Only show for Editor/Events, omitted when Consoles is active to avoid duplicate headers */}
       {activeBottomTab !== "consoles" && (
         <div className="flex items-center justify-between px-3 border-b border-border/80 bg-muted/40 h-8 text-xs select-none">
@@ -155,46 +215,6 @@ export function BottomPanel() {
           </div>
 
           <div className="flex items-center gap-1">
-            {/* Dropdown to switch drawer view if needed */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  size="xs"
-                  variant="ghost"
-                  className="gap-1 h-6 text-muted-foreground hover:text-foreground text-[11px]"
-                  title="Switch Drawer View"
-                >
-                  <LayoutGrid className="w-3 h-3" />
-                  <span>Views</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                {tabs.map((tab) => {
-                  const Icon = tab.icon;
-                  const isActive = activeBottomTab === tab.id;
-                  return (
-                    <DropdownMenuItem
-                      key={tab.id}
-                      onClick={() => setActiveBottomTab(tab.id)}
-                      className={`flex items-center justify-between text-xs cursor-pointer ${
-                        isActive ? "font-semibold text-primary" : ""
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <Icon className="w-3.5 h-3.5" />
-                        <span>{tab.label}</span>
-                      </div>
-                      {tab.count !== undefined && tab.count > 0 && (
-                        <Badge variant="outline" className="text-[10px] px-1 py-0 h-4">
-                          {tab.count}
-                        </Badge>
-                      )}
-                    </DropdownMenuItem>
-                  );
-                })}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
             {activeBottomTab === "events" && events.length > 0 && (
               <Button
                 size="icon-xs"

@@ -258,6 +258,39 @@ export function ConsolePanel() {
   const [addDropdownOpen, setAddDropdownOpen] = useState(false);
   const [nodeSearch, setNodeSearch] = useState("");
 
+  const [sessionListWidth, setSessionListWidth] = useState(240);
+  const [isResizingSessions, setIsResizingSessions] = useState(false);
+
+  const handleSessionResizeStart = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      setIsResizingSessions(true);
+
+      const startX = e.clientX;
+      const startWidth = sessionListWidth;
+
+      const onMouseMove = (moveEvent: MouseEvent) => {
+        const deltaX = moveEvent.clientX - startX;
+        const newWidth = Math.min(Math.max(startWidth + deltaX, 160), 450);
+        setSessionListWidth(newWidth);
+      };
+
+      const onMouseUp = () => {
+        setIsResizingSessions(false);
+        window.removeEventListener("mousemove", onMouseMove);
+        window.removeEventListener("mouseup", onMouseUp);
+        document.body.style.removeProperty("cursor");
+        document.body.style.removeProperty("user-select");
+      };
+
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+      window.addEventListener("mousemove", onMouseMove);
+      window.addEventListener("mouseup", onMouseUp);
+    },
+    [sessionListWidth],
+  );
+
   const activeNode = nodes.find((n) => n.node_id === activeConsoleNodeId);
   const activeNodeStarted = activeNode?.status === "started";
 
@@ -351,8 +384,15 @@ export function ConsolePanel() {
   }
 
   return (
-    <div className="flex flex-row h-full w-full overflow-hidden">
-      <div className="w-56 sm:w-64 flex-shrink-0 flex flex-col border-r border-border/80 select-none">
+    <div
+      className={`flex flex-row h-full w-full overflow-hidden ${
+        isResizingSessions ? "select-none" : ""
+      }`}
+    >
+      <div
+        style={{ width: `${sessionListWidth}px` }}
+        className="flex-shrink-0 flex flex-col border-r border-border/80 select-none"
+      >
         <div className="flex items-center justify-between px-3 py-2 border-b border-border/70">
           <div className="flex items-center gap-1.5 min-w-0">
             <span className="text-xs font-semibold text-foreground tracking-tight truncate">
@@ -533,6 +573,22 @@ export function ConsolePanel() {
             );
           })}
         </div>
+      </div>
+
+      {/* Horizontal Divider Handle between console list and terminal */}
+      <div
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="Resize console sessions list width"
+        title="Drag to resize session list width"
+        onMouseDown={handleSessionResizeStart}
+        className="group relative w-1 -mx-0.5 h-full cursor-col-resize z-20 hover:bg-primary/40 active:bg-primary transition-colors flex items-center justify-center select-none touch-none"
+      >
+        <div
+          className={`w-[2px] h-8 rounded-full transition-colors ${
+            isResizingSessions ? "bg-primary" : "bg-transparent group-hover:bg-primary/60"
+          }`}
+        />
       </div>
 
       <div className="flex-1 overflow-hidden min-w-0 h-full">
