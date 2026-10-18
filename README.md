@@ -1,235 +1,187 @@
-Welcome to your new TanStack Start app!
+# Modern GNS3 Web UI Replacement
 
-# Getting Started
+A high-performance, modern web interface replacing the legacy GNS3 Web UI. Built for network engineers managing real network labs on **GNS3 Server 3.1.x**, this UI provides a responsive desktop-grade lab management experience with interactive topology visualization, real-time terminal consoles, configuration editing, and live WebSocket telemetry.
 
-To run this application:
+---
+
+## 1. Architecture & Technology Stack
+
+The application is a **UI replacement only** that interfaces directly with the official GNS3 Controller REST API and WebSocket transports without requiring a separate backend or database.
+
+- **Framework:** [TanStack Start](https://tanstack.com/start) + [TanStack Router](https://tanstack.com/router) with Vite bundler.
+- **Topology Canvas:** [@xyflow/react](https://reactflow.dev/) (React Flow) with custom device nodes, port handles, and interface-labeled edges.
+- **State Management:**
+  - **Local UI & Canvas State:** [Zustand](https://github.com/pmndrs/zustand) (`src/stores/ui-store.ts`, `src/stores/topology-store.ts`).
+  - **Server Data & Mutations:** [TanStack Query](https://tanstack.com/query) (`@tanstack/react-query`) with automatic cache invalidation and query deduplication.
+- **Terminal Consoles:** [@xterm/xterm](https://xtermjs.org/) with `@xterm/addon-fit` and `@xterm/addon-attach` communicating over binary WebSocket frames.
+- **Configuration Editing:** [@monaco-editor/react](https://github.com/suren-atoyan/monaco-react) (VS Code Monaco engine) with syntax highlighting, search/replace, and live save back to the controller.
+- **UI Components:** [shadcn/ui](https://ui.shadcn.com/) accessible primitives powered by `radix-ui` and Tailwind CSS.
+- **Validation:** [Zod](https://zod.dev/) runtime schema validation.
+- **Icons:** [Lucide React](https://lucide.dev/).
+- **Testing:** [Vitest](https://vitest.dev/) for unit & integration testing; [Playwright](https://playwright.dev/) for end-to-end testing.
+
+---
+
+## 2. Main Application Layout
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│  TOP NAVIGATION: Logo | Controller Status (v3.1) | Project Selector | Theme | Settings  │
+├───────────────┬────────────────────────────────────────────────────────┬───────────────┤
+│ LEFT SIDEBAR  │ TOPOLOGY CANVAS (@xyflow/react)                        │ RIGHT PANEL   │
+│ - Projects    │ • Pan, Zoom, Fit-View, Snap-to-Grid                    │ (Contextual   │
+│ - Device Lib  │ • Custom Device Nodes (Router, Switch, Firewall, Host) │  Inspector)   │
+│ - Active Nodes│ • Multi-port Handles & Dynamic Wire Creation           │ • Node Spec   │
+│ - Connections │ • Interface Label Tags on Endpoints (e0, e0/1)         │ • Console Info│
+│ - Consoles    │ • Live Packet Capture Pulse Indicator (PCAP)           │ • Port List   │
+│               │ • Drag-and-drop Templates from Library                 │ • Link Props  │
+├───────────────┴────────────────────────────────────────────────────────┴───────────────┤
+│ BOTTOM PANEL (Collapsible Drawer)                                                      │
+│ [Consoles (xterm.js)]  [Configuration Editor (Monaco)]  [Controller Event Log]        │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 3. Verified GNS3 3.1 Controller API Endpoints
+
+The API integration was verified against the live **GNS3 Server 3.1.0a6** instance running on the controller:
+
+| Resource | HTTP Method | Endpoint | Description |
+| :--- | :--- | :--- | :--- |
+| **Version** | `GET` | `/v3/version` | Controller version and server status (unauthenticated) |
+| **Auth** | `POST` | `/v3/access/users/login` | Authenticate using `x-www-form-urlencoded` returning JWT access & refresh tokens |
+| **Auth** | `POST` | `/v3/access/users/refresh`| Transparently renew expired JWT access tokens |
+| **User** | `GET` | `/v3/access/users/me` | Fetch currently authenticated user details |
+| **Projects** | `GET` | `/v3/projects` | List all available lab projects |
+| **Projects** | `POST` | `/v3/projects` | Create a new project (`{ name }`) |
+| **Projects** | `GET` | `/v3/projects/{id}` | Retrieve specific project details |
+| **Projects** | `POST` | `/v3/projects/{id}/open` | Open project and load topology into memory |
+| **Projects** | `POST` | `/v3/projects/{id}/close` | Close project |
+| **Projects** | `DELETE`| `/v3/projects/{id}` | Permanently delete a project |
+| **Nodes** | `GET` | `/v3/projects/{id}/nodes` | Fetch all nodes, status, ports, and canvas positions |
+| **Nodes** | `POST` | `/v3/projects/{id}/nodes` | Create a generic node |
+| **Nodes** | `PUT` | `/v3/projects/{id}/nodes/{node_id}` | Update node name, coordinates (`x`, `y`), or label |
+| **Nodes** | `DELETE`| `/v3/projects/{id}/nodes/{node_id}` | Remove device from project |
+| **Lifecycle** | `POST` | `/v3/projects/{id}/nodes/{node_id}/start` | Start device process |
+| **Lifecycle** | `POST` | `/v3/projects/{id}/nodes/{node_id}/stop` | Stop device process |
+| **Lifecycle** | `POST` | `/v3/projects/{id}/nodes/{node_id}/suspend` | Suspend device state |
+| **Lifecycle** | `POST` | `/v3/projects/{id}/nodes/{node_id}/reload` | Restart device process |
+| **Lifecycle** | `POST` | `/v3/projects/{id}/nodes/start` | Start all nodes in the topology |
+| **Lifecycle** | `POST` | `/v3/projects/{id}/nodes/stop` | Stop all nodes in the topology |
+| **Templates** | `GET` | `/v3/templates` | Fetch device templates (Routers, Switches, PCs, Firewalls) |
+| **Templates** | `POST` | `/v3/projects/{id}/templates/{template_id}` | Instantiate device from template at `(x, y)` |
+| **Links** | `GET` | `/v3/projects/{id}/links` | List all links with endpoints and capture status |
+| **Links** | `POST` | `/v3/projects/{id}/links` | Connect two node interfaces |
+| **Links** | `DELETE`| `/v3/projects/{id}/links/{link_id}` | Disconnect link |
+| **Captures** | `POST` | `/v3/projects/{id}/links/{link_id}/capture/start` | Start Wireshark / PCAP capture |
+| **Captures** | `POST` | `/v3/projects/{id}/links/{link_id}/capture/stop` | Stop packet capture |
+| **Files** | `GET` | `/v3/projects/{id}/nodes/{node_id}/files` | List configuration files for Monaco editor |
+| **Files** | `GET` | `/v3/projects/{id}/nodes/{node_id}/files/{path}` | Read configuration file text |
+| **Files** | `POST` | `/v3/projects/{id}/nodes/{node_id}/files/{path}` | Write modified configuration file |
+| **Console WS** | `WS` | `/v3/projects/{id}/nodes/{node_id}/console/ws?token=...` | Interactive xterm.js terminal stream with binary `{ cols, rows }` resize frames |
+| **Events WS** | `WS` | `/v3/projects/{id}/notifications/ws?token=...` | Live controller telemetry feed |
+
+---
+
+## 4. Getting Started
+
+### Prerequisites
+
+- **Node.js:** v20+ (tested on Node v22.22.1)
+- **Package Manager:** `pnpm` (v10+ or v12+)
+- **GNS3 Controller:** GNS3 Server 3.1.x (defaults to `http://127.0.0.1:80`)
+
+### Installation
 
 ```bash
+# Clone the repository
+git clone <repo-url>
+cd gns3-web-ui-react
+
+# Install dependencies
 pnpm install
+```
+
+### Development Server
+
+```bash
+# Starts Vite dev server on port 3000 with controller proxy enabled
 pnpm dev
 ```
 
-# Building For Production
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-To build this application for production:
+### Running Automated Tests
 
 ```bash
+# Run unit & integration tests with Vitest
+pnpm test
+
+# Run tests in watch mode
+pnpm test:watch
+
+# Run Playwright End-to-End tests
+pnpm test:e2e
+```
+
+### Production Build
+
+```bash
+# Create optimized production build
 pnpm build
+
+# Preview production build locally
+pnpm preview
 ```
 
-## Styling
+---
 
-This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.
+## 5. Controller Configuration & Networking
 
-### Removing Tailwind CSS
+The controller connection is managed through `src/lib/gns3-api.ts`.
 
-If you prefer not to use Tailwind CSS:
+### Proxy Architecture
 
-1. Remove the demo pages in `src/routes/demo/`
-2. Replace the Tailwind import in `src/styles.css` with your own styles
-3. Remove `tailwindcss()` from the plugins array in `vite.config.ts`
-4. Remove `@tailwindcss/vite` and `tailwindcss` from `package.json`
-
-## Linting & Formatting
-
-This project uses [Biome](https://biomejs.dev/) for linting and formatting. The following scripts are available:
-
-
-```bash
-pnpm lint
-pnpm format
-pnpm check
-```
-
-
-## Deploy with Nitro
-
-This project uses Nitro as a generic server adapter, so it can run on any Node-compatible host.
-
-```bash
-npm run build
-node dist/server/index.mjs
-```
-
-The build output is a self-contained Node server. To deploy, push the `dist/` directory to your host (Render, Fly.io, your own VPS, etc.) and run the server command above.
-
-For host-specific presets (Vercel, Netlify, Cloudflare, AWS Lambda, etc.) and tuning, see https://v3.nitro.build/deploy.
-
-
-## Shadcn
-
-Add components using the latest version of [Shadcn](https://ui.shadcn.com/).
-
-```bash
-pnpm dlx shadcn@latest add button
-```
-
-
-## T3Env
-
-- You can use T3Env to add type safety to your environment variables.
-- Add Environment variables to the `src/env.mjs` file.
-- Use the environment variables in your code.
-
-### Usage
+In development, Vite proxies requests from `/api/gns3/*` to the GNS3 Server on port 80:
 
 ```ts
-import { env } from "#/env";
-
-console.log(env.VITE_APP_TITLE);
-```
-
-
-
-
-
-
-## Routing
-
-This project uses [TanStack Router](https://tanstack.com/router) with file-based routing. Routes are managed as files in `src/routes`.
-
-### Adding A Route
-
-To add a new route to your application just add a new file in the `./src/routes` directory.
-
-TanStack will automatically generate the content of the route file for you.
-
-Now that you have two routes you can use a `Link` component to navigate between them.
-
-### Adding Links
-
-To use SPA (Single Page Application) navigation you will need to import the `Link` component from `@tanstack/react-router`.
-
-```tsx
-import { Link } from "@tanstack/react-router";
-```
-
-Then anywhere in your JSX you can use it like so:
-
-```tsx
-<Link to="/about">About</Link>
-```
-
-This will create a link that will navigate to the `/about` route.
-
-More information on the `Link` component can be found in the [Link documentation](https://tanstack.com/router/v1/docs/framework/react/api/router/linkComponent).
-
-### Using A Layout
-
-In the File Based Routing setup the layout is located in `src/routes/__root.tsx`. Anything you add to the root route will appear in all the routes. The route content will appear in the JSX where you render `{children}` in the `shellComponent`.
-
-Here is an example layout that includes a header:
-
-```tsx
-import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
-
-export const Route = createRootRoute({
-  head: () => ({
-    meta: [
-      { charSet: 'utf-8' },
-      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'My App' },
-    ],
-  }),
-  shellComponent: ({ children }) => (
-    <html lang="en">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        <header>
-          <nav>
-            <Link to="/">Home</Link>
-            <Link to="/about">About</Link>
-          </nav>
-        </header>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  ),
-})
-```
-
-More information on layouts can be found in the [Layouts documentation](https://tanstack.com/router/latest/docs/framework/react/guide/routing-concepts#layouts).
-
-## Server Functions
-
-TanStack Start provides server functions that allow you to write server-side code that seamlessly integrates with your client components.
-
-```tsx
-import { createServerFn } from '@tanstack/react-start'
-
-const getServerTime = createServerFn({
-  method: 'GET',
-}).handler(async () => {
-  return new Date().toISOString()
-})
-
-// Use in a component
-function MyComponent() {
-  const [time, setTime] = useState('')
-  
-  useEffect(() => {
-    getServerTime().then(setTime)
-  }, [])
-  
-  return <div>Server time: {time}</div>
-}
-```
-
-## API Routes
-
-You can create API routes by using the `server` property in your route definitions:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-import { json } from '@tanstack/react-start'
-
-export const Route = createFileRoute('/api/hello')({
-  server: {
-    handlers: {
-      GET: () => json({ message: 'Hello, World!' }),
+// vite.config.ts
+server: {
+  port: 3000,
+  proxy: {
+    '/api/gns3': {
+      target: process.env.GNS3_CONTROLLER_URL || 'http://127.0.0.1:80',
+      changeOrigin: true,
+      rewrite: (path) => path.replace(/^\/api\/gns3/, ''),
+      ws: true,
     },
   },
-})
-```
-
-## Data Fetching
-
-There are multiple ways to fetch data in your application. You can use TanStack Query to fetch data from a server. But you can also use the `loader` functionality built into TanStack Router to load the data for a route before it's rendered.
-
-For example:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-
-export const Route = createFileRoute('/people')({
-  loader: async () => {
-    const response = await fetch('https://swapi.dev/api/people')
-    return response.json()
-  },
-  component: PeopleComponent,
-})
-
-function PeopleComponent() {
-  const data = Route.useLoaderData()
-  return (
-    <ul>
-      {data.results.map((person) => (
-        <li key={person.name}>{person.name}</li>
-      ))}
-    </ul>
-  )
 }
 ```
 
-Loaders simplify your data fetching logic dramatically. Check out more information in the [Loader documentation](https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#loader-parameters).
+### Runtime Settings
 
+Click the **Settings** (gear icon) in the Top Navigation bar to configure:
+1. **Controller URL:** Change between `/api/gns3` (default local proxy) or any external controller IP (`http://192.168.1.100:80`).
+2. **Authentication:** Superadmin username (default: `admin`) and password.
+3. **Live Test & Connect:** Immediately validates API accessibility and reports the controller version. Settings persist in browser `localStorage`.
 
+---
 
-# Learn More
+## 6. Device Console Protocol & Transport
 
-You can learn more about all of the offerings from TanStack in the [TanStack documentation](https://tanstack.com).
+GNS3 Server 3.1 exposes a WebSocket console proxy at:
+```
+ws://<controller-host>:<port>/v3/projects/{project_id}/nodes/{node_id}/console/ws?token=<jwt_token>
+```
 
-For TanStack Start specific documentation, visit [TanStack Start](https://tanstack.com/start).
+- **Interactive Data:** Terminal text frames travel bidirectionally using xterm's AttachAddon.
+- **Terminal Resize:** When the browser viewport or panel is resized, the client sends a binary WebSocket control frame containing JSON `{ cols: number, rows: number }`. The controller translates this into telnet NAWS (Negotiate About Window Size), SSH PTY resize, or docker exec resize.
+
+---
+
+## 7. Known Compatibility Limitations
+
+1. **Direct Telnet Ports:** Devices exposing raw TCP telnet ports on loopback interfaces (`127.0.0.1:5000+`) require the controller's WebSocket console proxy for in-browser access. The UI uses the WebSocket proxy automatically.
+2. **Drawing Annotations:** Basic SVG drawings are stored on the controller. Full vector drawing shape manipulation tools will be expanded in future releases.
