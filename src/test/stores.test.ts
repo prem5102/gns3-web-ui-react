@@ -44,16 +44,6 @@ describe("useUIStore", () => {
 		expect(useUIStore.getState().activeConsoleNodeId).toBe("node-1");
 	});
 
-	it("supports vertical console tab orientation by default and orientation toggling", () => {
-		expect(useUIStore.getState().consoleTabOrientation).toBe("vertical");
-
-		useUIStore.getState().toggleConsoleTabOrientation();
-		expect(useUIStore.getState().consoleTabOrientation).toBe("horizontal");
-
-		useUIStore.getState().setConsoleTabOrientation("vertical");
-		expect(useUIStore.getState().consoleTabOrientation).toBe("vertical");
-	});
-
 	it("closes all open consoles with closeAllConsoles", () => {
 		useUIStore.getState().openConsoleForNode("node-1");
 		useUIStore.getState().openConsoleForNode("node-2");

@@ -1,12 +1,19 @@
-import { act, render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { act, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import {
+	ConsolePanel,
+	getTerminalTheme,
+	TERMINAL_DARK_THEME,
+	TERMINAL_LIGHT_THEME,
+} from "@/components/console/console-panel";
 import { BottomPanel } from "@/components/layout/bottom-panel";
 import { Sidebar } from "@/components/layout/sidebar";
 import { NodeModelModal } from "@/components/topology/node-model-modal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useTopologyStore } from "@/stores/topology-store";
 import { useUIStore } from "@/stores/ui-store";
 
 vi.mock("@/features/nodes/use-nodes", () => ({
@@ -113,9 +120,14 @@ describe("UI Primitives", () => {
 		expect(viewport?.contains(routerModel)).toBe(true);
 	});
 
-	it("renders Console, Events and Config Editor at the bottom of the sidebar near Settings", () => {
+	it("renders Console and Events at the bottom of the sidebar near Settings", () => {
 		const queryClient = new QueryClient({
 			defaultOptions: { queries: { retry: false } },
+		});
+
+		useUIStore.setState({
+			openConsoles: ["node-alpha"],
+			bottomPanelOpen: false,
 		});
 
 		render(
@@ -125,28 +137,19 @@ describe("UI Primitives", () => {
 		);
 
 		const consoleBtn = screen.getByTitle(/Consoles/i);
-		const editorBtn = screen.getByTitle("Configuration Editor");
 		const eventsBtn = screen.getByTitle(/Controller Events/i);
 		const settingsBtn = screen.getByTitle("Settings & Preferences");
 
 		expect(consoleBtn).toBeDefined();
-		expect(editorBtn).toBeDefined();
 		expect(eventsBtn).toBeDefined();
 		expect(settingsBtn).toBeDefined();
 
-		// Clicking console button toggles activeBottomTab to "consoles" and opens bottom panel
+		// When at least one console is open, clicking console button opens console drawer
 		act(() => {
 			consoleBtn.click();
 		});
 		expect(useUIStore.getState().bottomPanelOpen).toBe(true);
 		expect(useUIStore.getState().activeBottomTab).toBe("consoles");
-
-		// Clicking editor button switches activeBottomTab to "editor"
-		act(() => {
-			editorBtn.click();
-		});
-		expect(useUIStore.getState().bottomPanelOpen).toBe(true);
-		expect(useUIStore.getState().activeBottomTab).toBe("editor");
 
 		// Clicking events button switches activeBottomTab to "events"
 		act(() => {
@@ -195,5 +198,176 @@ describe("UI Primitives", () => {
 			resizer.dispatchEvent(new MouseEvent("dblclick", { bubbles: true }));
 		});
 		expect(useUIStore.getState().bottomPanelHeight).toBe(280);
+	});
+
+	it("renders ConsolePanel horizontal tabs and handles tab switching and closing", () => {
+		useTopologyStore.setState({ activeProjectId: "test-proj-1" });
+		useUIStore.setState({
+			openConsoles: ["node-alpha", "node-beta"],
+			activeConsoleNodeId: "node-alpha",
+			bottomPanelOpen: true,
+			activeBottomTab: "consoles",
+		});
+
+		render(<ConsolePanel />);
+
+		// Check that tabs for node-alpha and node-beta are rendered horizontally
+		expect(screen.getByText("node-alp")).toBeDefined();
+		expect(screen.getByText("node-bet")).toBeDefined();
+
+		// Click on node-beta tab
+		const betaTab = screen.getByText("node-bet");
+		act(() => {
+			betaTab.click();
+		});
+		expect(useUIStore.getState().activeConsoleNodeId).toBe("node-beta");
+
+		// Reconnect button exists in horizontal tab controls
+		const reconnectBtn = screen.getByTitle("Reconnect Active Console");
+		expect(reconnectBtn).toBeDefined();
+
+		// Verify no vertical session list separator exists
+		const verticalSeparator = screen.queryByRole("separator", {
+			name: /Resize console sessions list width/i,
+		});
+		expect(verticalSeparator).toBeNull();
+	});
+
+	it("supports dark and light mode in console terminal and allows toggling", () => {
+		expect(getTerminalTheme("dark")).toEqual(TERMINAL_DARK_THEME);
+		expect(getTerminalTheme("light")).toEqual(TERMINAL_LIGHT_THEME);
+		expect(TERMINAL_DARK_THEME.background).toBe("#09090b");
+		expect(TERMINAL_LIGHT_THEME.background).toBe("#ffffff");
+
+		useTopologyStore.setState({ activeProjectId: "test-proj-1" });
+		useUIStore.setState({
+			openConsoles: ["node-alpha"],
+			activeConsoleNodeId: "node-alpha",
+			bottomPanelOpen: true,
+			activeBottomTab: "consoles",
+			theme: "dark",
+		});
+
+		const { rerender } = render(<ConsolePanel />);
+
+		const toggleBtn = screen.getByTitle("Switch to light terminal");
+		expect(toggleBtn).toBeDefined();
+
+		act(() => {
+			toggleBtn.click();
+		});
+
+		expect(useUIStore.getState().theme).toBe("light");
+
+		rerender(<ConsolePanel />);
+		expect(screen.getByTitle("Switch to dark terminal")).toBeDefined();
+	});
+
+	it("shows add console dropdown when no console is opened, and opens console drawer without dropdown when at least one console is opened", () => {
+		const queryClient = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+
+		// 1. When no console is opened: clicking console icon shows the AddConsoleDropdownContent
+		useUIStore.setState({
+			openConsoles: [],
+			activeConsoleNodeId: null,
+			bottomPanelOpen: false,
+		});
+
+		const { unmount } = render(
+			<QueryClientProvider client={queryClient}>
+				<Sidebar />
+			</QueryClientProvider>,
+		);
+
+		let consoleBtn = screen.getByTitle(/Consoles/i);
+		expect(consoleBtn).toBeDefined();
+
+		// Initially, the add console dropdown is not open
+		expect(screen.queryByPlaceholderText("Search nodes...")).toBeNull();
+
+		// Clicking console button when no console is opened shows the add console dropdown
+		act(() => {
+			consoleBtn.click();
+		});
+
+		expect(screen.getByPlaceholderText("Search nodes...")).toBeDefined();
+
+		unmount();
+
+		// 2. When at least one console is opened: clicking console icon does NOT show dropdown and opens console drawer
+		useUIStore.setState({
+			openConsoles: ["node-alpha"],
+			activeConsoleNodeId: "node-alpha",
+			bottomPanelOpen: false,
+		});
+
+		render(
+			<QueryClientProvider client={queryClient}>
+				<Sidebar />
+			</QueryClientProvider>,
+		);
+
+		consoleBtn = screen.getByTitle(/Consoles/i);
+		expect(screen.queryByPlaceholderText("Search nodes...")).toBeNull();
+
+		act(() => {
+			consoleBtn.click();
+		});
+
+		// Dropdown is not shown
+		expect(screen.queryByPlaceholderText("Search nodes...")).toBeNull();
+		// Console drawer is opened
+		expect(useUIStore.getState().bottomPanelOpen).toBe(true);
+		expect(useUIStore.getState().activeBottomTab).toBe("consoles");
+	});
+
+	it("automatically closes console bottom drawer when all consoles are closed", () => {
+		useTopologyStore.setState({ activeProjectId: "test-proj-1" });
+		useUIStore.setState({
+			openConsoles: ["node-alpha"],
+			activeConsoleNodeId: "node-alpha",
+			bottomPanelOpen: true,
+			activeBottomTab: "consoles",
+		});
+
+		const { rerender } = render(<BottomPanel />);
+		expect(useUIStore.getState().bottomPanelOpen).toBe(true);
+
+		// Close the only open console
+		act(() => {
+			useUIStore.getState().closeConsoleForNode("node-alpha");
+		});
+
+		expect(useUIStore.getState().openConsoles).toHaveLength(0);
+		expect(useUIStore.getState().bottomPanelOpen).toBe(false);
+
+		// Re-open with multiple consoles, then closeAllConsoles
+		act(() => {
+			useUIStore.setState({
+				openConsoles: ["node-alpha", "node-beta"],
+				activeConsoleNodeId: "node-alpha",
+				bottomPanelOpen: true,
+				activeBottomTab: "consoles",
+			});
+			useUIStore.getState().closeAllConsoles();
+		});
+
+		expect(useUIStore.getState().openConsoles).toHaveLength(0);
+		expect(useUIStore.getState().bottomPanelOpen).toBe(false);
+
+		// Render with openConsoles: [] and bottomPanelOpen: true on consoles tab
+		act(() => {
+			useUIStore.setState({
+				openConsoles: [],
+				activeConsoleNodeId: null,
+				bottomPanelOpen: true,
+				activeBottomTab: "consoles",
+			});
+			rerender(<BottomPanel />);
+		});
+
+		expect(useUIStore.getState().bottomPanelOpen).toBe(false);
 	});
 });

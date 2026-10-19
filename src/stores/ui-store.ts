@@ -39,7 +39,6 @@ interface UIState {
 	activeConsoleNodeId: string | null;
 	activeEditorNodeId: string | null;
 	editorOpen: boolean;
-	consoleTabOrientation: "vertical" | "horizontal";
 
 	// Logs & Events
 	events: ControllerEvent[];
@@ -62,8 +61,6 @@ interface UIState {
 	closeConsoleForNode: (nodeId: string) => void;
 	closeAllConsoles: () => void;
 	setActiveConsoleNodeId: (nodeId: string | null) => void;
-	setConsoleTabOrientation: (orientation: "vertical" | "horizontal") => void;
-	toggleConsoleTabOrientation: () => void;
 	openEditorForNode: (nodeId: string) => void;
 	closeEditor: () => void;
 	addEvent: (event: Omit<ControllerEvent, "id" | "timestamp">) => void;
@@ -90,7 +87,6 @@ export const useUIStore = create<UIState>()(
 			activeConsoleNodeId: null,
 			activeEditorNodeId: null,
 			editorOpen: false,
-			consoleTabOrientation: "vertical",
 
 			events: [],
 
@@ -172,17 +168,6 @@ export const useUIStore = create<UIState>()(
 
 			setActiveConsoleNodeId: (nodeId) => set({ activeConsoleNodeId: nodeId }),
 
-			setConsoleTabOrientation: (orientation) =>
-				set({ consoleTabOrientation: orientation }),
-
-			toggleConsoleTabOrientation: () =>
-				set((state) => ({
-					consoleTabOrientation:
-						state.consoleTabOrientation === "vertical"
-							? "horizontal"
-							: "vertical",
-				})),
-
 			openEditorForNode: (nodeId) =>
 				set({
 					activeEditorNodeId: nodeId,
@@ -220,7 +205,6 @@ export const useUIStore = create<UIState>()(
 				sidebarOpen: state.sidebarOpen,
 				rightPanelOpen: state.rightPanelOpen,
 				bottomPanelHeight: state.bottomPanelHeight,
-				consoleTabOrientation: state.consoleTabOrientation,
 			}),
 		},
 	),

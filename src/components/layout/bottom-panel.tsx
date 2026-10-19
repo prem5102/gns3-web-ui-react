@@ -1,12 +1,6 @@
-import {
-  Activity,
-  ChevronDown,
-  FileCode2,
-  Terminal as TerminalIcon,
-  Trash2,
-} from "lucide-react";
+import { Activity, ChevronDown, FileCode2, Terminal as TerminalIcon, Trash2 } from "lucide-react";
 import type React from "react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ConsolePanel } from "@/components/console/console-panel";
 import { ConfigEditor } from "@/components/editor/config-editor";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +22,13 @@ export function BottomPanel() {
 
   const [isDragging, setIsDragging] = useState(false);
 
+  // Automatically close the bottom drawer if all consoles are closed while on consoles tab
+  useEffect(() => {
+    if (openConsoles.length === 0 && bottomPanelOpen && activeBottomTab === "consoles") {
+      setBottomPanelOpen(false);
+    }
+  }, [openConsoles.length, bottomPanelOpen, activeBottomTab, setBottomPanelOpen]);
+
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
@@ -39,9 +40,7 @@ export function BottomPanel() {
       const onMouseMove = (moveEvent: MouseEvent) => {
         const deltaY = startY - moveEvent.clientY;
         const maxHeight =
-          typeof window !== "undefined"
-            ? Math.floor(window.innerHeight * 0.85)
-            : 800;
+          typeof window !== "undefined" ? Math.floor(window.innerHeight * 0.85) : 800;
         const newHeight = Math.min(Math.max(startHeight + deltaY, 120), maxHeight);
         setBottomPanelHeight(newHeight);
       };
@@ -74,9 +73,7 @@ export function BottomPanel() {
         if (moveEvent.touches.length !== 1) return;
         const deltaY = startY - moveEvent.touches[0].clientY;
         const maxHeight =
-          typeof window !== "undefined"
-            ? Math.floor(window.innerHeight * 0.85)
-            : 800;
+          typeof window !== "undefined" ? Math.floor(window.innerHeight * 0.85) : 800;
         const newHeight = Math.min(Math.max(startHeight + deltaY, 120), maxHeight);
         setBottomPanelHeight(newHeight);
       };
@@ -98,9 +95,7 @@ export function BottomPanel() {
       setBottomPanelHeight(280);
     } else {
       const expandedHeight =
-        typeof window !== "undefined"
-          ? Math.min(520, Math.floor(window.innerHeight * 0.65))
-          : 500;
+        typeof window !== "undefined" ? Math.min(520, Math.floor(window.innerHeight * 0.65)) : 500;
       setBottomPanelHeight(expandedHeight);
     }
   }, [bottomPanelHeight, setBottomPanelHeight]);
@@ -170,9 +165,7 @@ export function BottomPanel() {
         {/* Subtle accent bar on hover / drag */}
         <div
           className={`w-full h-[2px] transition-colors ${
-            isDragging
-              ? "bg-primary"
-              : "bg-transparent group-hover:bg-primary/70"
+            isDragging ? "bg-primary" : "bg-transparent group-hover:bg-primary/70"
           }`}
         />
         {/* Visual Pill Grip Handle */}
