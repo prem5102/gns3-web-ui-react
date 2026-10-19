@@ -1,4 +1,4 @@
-import { ComputerTerminalIcon, EllipsisIcon } from "@hugeicons/core-free-icons";
+import { ComputerTerminalIcon, EllipsisIcon, PlayIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import type { FitAddon } from "@xterm/addon-fit";
 import type { Terminal } from "@xterm/xterm";
@@ -23,8 +23,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useProjectNodes, useStartNode } from "@/features/nodes/use-nodes";
 import { gns3Api } from "@/lib/gns3-api";
 import { cn } from "@/lib/utils";
@@ -282,43 +280,23 @@ const TerminalViewport = forwardRef<TerminalViewportHandle, TerminalViewportProp
         {!isNodeStarted && (
           <div
             className={cn(
-              "absolute inset-0 z-10 flex flex-col items-center justify-center text-xs space-y-3 p-4 transition-colors",
+              "absolute inset-0 z-10 flex flex-col items-center justify-center text-xs space-y-6 p-4 transition-colors",
               theme === "dark" ? "bg-[#09090b]/95 text-zinc-400" : "bg-white/95 text-zinc-600",
             )}
           >
-            <Power
-              className={cn(
-                "w-8 h-8 opacity-40",
-                theme === "dark" ? "text-zinc-500" : "text-zinc-400",
-              )}
-            />
-            <div className="text-center">
-              <p
-                className={cn("font-medium", theme === "dark" ? "text-zinc-200" : "text-zinc-800")}
-              >
-                "{node?.name || nodeId}" is stopped
-              </p>
-              {node?.console && (
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    "mt-1 font-mono text-[11px]",
-                    theme === "dark" ? "text-zinc-400 border-zinc-800" : "text-zinc-500",
-                  )}
-                >
-                  Port: {node.console}
-                </Badge>
-              )}
+            <div className="flex flex-col items-center gap-2.5">
+              <Power className="size-14 text-destructive" />
+              <p>{node?.name || nodeId} is stopped</p>
             </div>
+
             <Button
               size="sm"
-              variant="outline"
+              variant="secondary"
               onClick={() => startNodeMutation.mutate(nodeId)}
               disabled={startNodeMutation.isPending}
-              className="text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10 gap-1.5"
             >
-              <Power className="w-3.5 h-3.5" />
-              <span>Start Node to Connect Console</span>
+              <HugeiconsIcon icon={PlayIcon} />
+              <span>Start Node</span>
             </Button>
           </div>
         )}
@@ -338,7 +316,6 @@ export function ConsolePanel() {
     bottomPanelOpen,
     setBottomPanelOpen,
     activeBottomTab,
-    theme,
   } = useUIStore();
   const { activeProjectId } = useTopologyStore();
 
@@ -488,14 +465,7 @@ export function ConsolePanel() {
   }
 
   return (
-    <Tabs
-      value={activeConsoleNodeId || undefined}
-      onValueChange={(val) => setActiveConsoleNodeId(val)}
-      className={cn(
-        "flex flex-col h-full w-full overflow-hidden transition-colors",
-        theme === "dark" ? "bg-[#09090b]" : "bg-white",
-      )}
-    >
+    <div className="flex flex-col h-full">
       <div className="flex items-center justify-between p-1.5 border-b border-border/60 text-xs select-none shrink-0 min-w-0">
         <div
           ref={containerRef}
@@ -665,19 +635,14 @@ export function ConsolePanel() {
       {/* Full-width Terminal Viewport Area */}
       <div className="flex-1 overflow-hidden min-w-0 h-full w-full">
         {activeConsoleNodeId && (
-          <TabsContent
-            value={activeConsoleNodeId}
-            className="flex-1 overflow-hidden min-w-0 h-full w-full m-0 outline-none"
-          >
-            <TerminalViewport
-              key={activeConsoleNodeId}
-              ref={terminalViewportRef}
-              projectId={activeProjectId}
-              nodeId={activeConsoleNodeId}
-            />
-          </TabsContent>
+          <TerminalViewport
+            key={activeConsoleNodeId}
+            ref={terminalViewportRef}
+            projectId={activeProjectId}
+            nodeId={activeConsoleNodeId}
+          />
         )}
       </div>
-    </Tabs>
+    </div>
   );
 }
