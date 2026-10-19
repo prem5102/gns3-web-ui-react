@@ -233,7 +233,45 @@ describe("UI Primitives", () => {
 		expect(verticalSeparator).toBeNull();
 	});
 
-	it("supports dark and light mode in console terminal and allows toggling", () => {
+	it("renders overflow dropdown menu button when tabs overflow container width", () => {
+		useTopologyStore.setState({ activeProjectId: "test-proj-1" });
+		useUIStore.setState({
+			openConsoles: ["node-alpha", "node-beta", "node-gamma", "node-delta"],
+			activeConsoleNodeId: "node-alpha",
+			bottomPanelOpen: true,
+			activeBottomTab: "consoles",
+		});
+
+		const { container } = render(<ConsolePanel />);
+
+		// Initially in jsdom (clientWidth=0), all tabs are visible fallback
+		expect(screen.getByText("node-alp")).toBeDefined();
+		expect(screen.getByText("node-bet")).toBeDefined();
+
+		// Simulate container width constraint (160px), which cannot fit all 4 tabs
+		const tabsContainer = container.querySelector(
+			'[data-slot="console-tabs-container"]',
+		);
+		if (tabsContainer) {
+			Object.defineProperty(tabsContainer, "clientWidth", {
+				value: 160,
+				configurable: true,
+			});
+		}
+
+		act(() => {
+			window.dispatchEvent(new Event("resize"));
+		});
+
+		// Overflow button should now be rendered with title containing overflow consoles
+		const overflowBtn = screen.getByTitle(/overflow console/i);
+		expect(overflowBtn).toBeDefined();
+
+		// Active tab remains visible in the tab bar
+		expect(screen.getByText("node-alp")).toBeDefined();
+	});
+
+	it("supports dark and light mode in console terminal", () => {
 		expect(getTerminalTheme("dark")).toEqual(TERMINAL_DARK_THEME);
 		expect(getTerminalTheme("light")).toEqual(TERMINAL_LIGHT_THEME);
 		expect(TERMINAL_DARK_THEME.background).toBe("#09090b");
@@ -249,18 +287,14 @@ describe("UI Primitives", () => {
 		});
 
 		const { rerender } = render(<ConsolePanel />);
-
-		const toggleBtn = screen.getByTitle("Switch to light terminal");
-		expect(toggleBtn).toBeDefined();
+		expect(useUIStore.getState().theme).toBe("dark");
 
 		act(() => {
-			toggleBtn.click();
+			useUIStore.getState().toggleTheme();
 		});
 
 		expect(useUIStore.getState().theme).toBe("light");
-
 		rerender(<ConsolePanel />);
-		expect(screen.getByTitle("Switch to dark terminal")).toBeDefined();
 	});
 
 	it("shows add console dropdown when no console is opened, and opens console drawer without dropdown when at least one console is opened", () => {

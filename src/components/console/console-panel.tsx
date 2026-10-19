@@ -1,20 +1,30 @@
+import { ComputerTerminalIcon, EllipsisIcon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import type { FitAddon } from "@xterm/addon-fit";
 import type { Terminal } from "@xterm/xterm";
+import { Plus, Power, RotateCw, Terminal as TerminalIcon, Trash2, X } from "lucide-react";
 import {
-  ChevronDown,
-  Moon,
-  Plus,
-  Power,
-  RotateCw,
-  Sun,
-  Terminal as TerminalIcon,
-  Trash2,
-  X,
-} from "lucide-react";
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { AddConsoleDropdownContent } from "@/components/console/add-console-dropdown";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useProjectNodes, useStartNode } from "@/features/nodes/use-nodes";
 import { gns3Api } from "@/lib/gns3-api";
 import { cn } from "@/lib/utils";
@@ -289,14 +299,15 @@ const TerminalViewport = forwardRef<TerminalViewportHandle, TerminalViewportProp
                 "{node?.name || nodeId}" is stopped
               </p>
               {node?.console && (
-                <p
+                <Badge
+                  variant="outline"
                   className={cn(
-                    "text-[11px] font-mono mt-0.5",
-                    theme === "dark" ? "text-zinc-400" : "text-zinc-500",
+                    "mt-1 font-mono text-[11px]",
+                    theme === "dark" ? "text-zinc-400 border-zinc-800" : "text-zinc-500",
                   )}
                 >
                   Port: {node.console}
-                </p>
+                </Badge>
               )}
             </div>
             <Button
@@ -328,7 +339,6 @@ export function ConsolePanel() {
     setBottomPanelOpen,
     activeBottomTab,
     theme,
-    toggleTheme,
   } = useUIStore();
   const { activeProjectId } = useTopologyStore();
 
@@ -337,9 +347,11 @@ export function ConsolePanel() {
   const terminalViewportRef = useRef<TerminalViewportHandle>(null);
 
   const [addDropdownOpen, setAddDropdownOpen] = useState(false);
+  const [containerWidth, setContainerWidth] = useState<number>(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const tabWidthsRef = useRef<Map<string, number>>(new Map());
 
   const activeNode = nodes.find((n) => n.node_id === activeConsoleNodeId);
-
   const activeNodeStarted = activeNode?.status === "started";
 
   // Automatically close the bottom drawer if all consoles are closed
@@ -348,6 +360,119 @@ export function ConsolePanel() {
       setBottomPanelOpen(false);
     }
   }, [openConsoles.length, bottomPanelOpen, activeBottomTab, setBottomPanelOpen]);
+
+  // Clean up cached widths for closed consoles
+  useEffect(() => {
+    const openSet = new Set(openConsoles);
+    for (const key of tabWidthsRef.current.keys()) {
+      if (!openSet.has(key)) {
+        tabWidthsRef.current.delete(key);
+      }
+    }
+  }, [openConsoles]);
+
+  // Track container width to detect tab overflow
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const updateWidth = () => {
+      const width = el.clientWidth;
+      if (width > 0) {
+        setContainerWidth(width);
+      }
+    };
+
+    updateWidth();
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const width = entry.contentRect?.width || el.clientWidth;
+        if (width > 0) {
+          setContainerWidth(width);
+        }
+      }
+    });
+
+    observer.observe(el);
+    window.addEventListener("resize", updateWidth);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", updateWidth);
+    };
+  }, []);
+
+  // Calculate which tabs fit in visible row and which overflow
+  const { visibleTabs, overflowTabs } = useMemo(() => {
+    if (containerWidth <= 0 || openConsoles.length <= 1) {
+      return { visibleTabs: openConsoles, overflowTabs: [] };
+    }
+
+    const defaultTabWidth = (id: string) => {
+      const node = nodes.find((n) => n.node_id === id);
+      const name = node?.name || id.substring(0, 8);
+      return Math.max(76, Math.min(180, name.length * 8 + 44));
+    };
+
+    let totalAllTabsWidth = 0;
+    for (const id of openConsoles) {
+      const w = tabWidthsRef.current.get(id) || defaultTabWidth(id);
+      totalAllTabsWidth += w;
+    }
+    const allGaps = (openConsoles.length - 1) * 6;
+    const plusBtnWidth = 30;
+
+    // If all tabs fit comfortably, return all as visible
+    if (totalAllTabsWidth + allGaps + plusBtnWidth <= containerWidth) {
+      return { visibleTabs: openConsoles, overflowTabs: [] };
+    }
+
+    // Tabs overflow: calculate visible tabs while reserving space for overflow button
+    const overflowBtnWidth = 46;
+    const availableForTabs = Math.max(70, containerWidth - plusBtnWidth - overflowBtnWidth - 18);
+
+    let usedWidth = 0;
+    const fittingTabs: string[] = [];
+
+    for (const id of openConsoles) {
+      const w = tabWidthsRef.current.get(id) || defaultTabWidth(id);
+      const nextWidth = usedWidth + w + (fittingTabs.length > 0 ? 6 : 0);
+      if (nextWidth <= availableForTabs) {
+        usedWidth = nextWidth;
+        fittingTabs.push(id);
+      } else {
+        break;
+      }
+    }
+
+    // Ensure active tab is visible if possible
+    if (activeConsoleNodeId && !fittingTabs.includes(activeConsoleNodeId)) {
+      const activeWidth =
+        tabWidthsRef.current.get(activeConsoleNodeId) || defaultTabWidth(activeConsoleNodeId);
+      while (
+        fittingTabs.length > 0 &&
+        usedWidth + activeWidth + (fittingTabs.length > 1 ? 6 : 0) > availableForTabs
+      ) {
+        const popped = fittingTabs.pop();
+        if (popped) {
+          const poppedWidth = tabWidthsRef.current.get(popped) || defaultTabWidth(popped);
+          usedWidth -= poppedWidth + 6;
+        }
+      }
+      fittingTabs.push(activeConsoleNodeId);
+    }
+
+    if (fittingTabs.length === 0 && openConsoles.length > 0) {
+      fittingTabs.push(activeConsoleNodeId || openConsoles[0]);
+    }
+
+    const visibleSet = new Set(fittingTabs);
+    const visible = openConsoles.filter((id) => visibleSet.has(id));
+    const overflow = openConsoles.filter((id) => !visibleSet.has(id));
+
+    return { visibleTabs: visible, overflowTabs: overflow };
+  }, [openConsoles, activeConsoleNodeId, containerWidth, nodes]);
 
   if (!activeProjectId) {
     return (
@@ -363,62 +488,143 @@ export function ConsolePanel() {
   }
 
   return (
-    <div
+    <Tabs
+      value={activeConsoleNodeId || undefined}
+      onValueChange={(val) => setActiveConsoleNodeId(val)}
       className={cn(
         "flex flex-col h-full w-full overflow-hidden transition-colors",
         theme === "dark" ? "bg-[#09090b]" : "bg-white",
       )}
     >
-      <div className="flex items-center justify-between border-b p-1.5 text-xs select-none shrink-0">
-        <div className="flex items-center gap-2 overflow-x-auto min-w-0 flex-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {openConsoles.map((nodeId) => {
+      <div className="flex items-center justify-between p-1.5 border-b border-border/60 text-xs select-none shrink-0 min-w-0">
+        <div
+          ref={containerRef}
+          data-slot="console-tabs-container"
+          className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden"
+        >
+          {visibleTabs.map((nodeId) => {
             const node = nodes.find((n) => n.node_id === nodeId);
-            const isActive = nodeId === activeConsoleNodeId;
             const nodeName = node?.name || nodeId.substring(0, 8);
+            const isActive = nodeId === activeConsoleNodeId;
+
             return (
               <div
-                key={nodeId}
+                ref={(el) => {
+                  if (el) {
+                    const rect = el.getBoundingClientRect();
+                    if (rect.width > 0) {
+                      tabWidthsRef.current.set(nodeId, rect.width);
+                    }
+                  }
+                }}
                 onClick={() => setActiveConsoleNodeId(nodeId)}
                 className={cn(
-                  "group flex items-center gap-1.5 px-2.5 py-1 border rounded-sm text-xs cursor-pointer transition-all",
+                  "group relative flex items-center gap-1.5 px-2.5 py-1 border rounded-sm text-xs cursor-pointer transition-all select-none shrink-0",
                   isActive
-                    ? "bg-muted border-border text-foreground font-medium shadow-xs"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
+                    ? "bg-muted text-foreground font-medium"
+                    : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/60",
                 )}
               >
-                <span className="truncate text-xs">{nodeName}</span>
+                <div className="relative size-3.5 flex items-center justify-center shrink-0">
+                  <HugeiconsIcon
+                    icon={ComputerTerminalIcon}
+                    className={cn(
+                      "size-3.5 shrink-0 transition-opacity group-hover:opacity-0",
+                      isActive
+                        ? "text-foreground"
+                        : "text-muted-foreground group-hover:text-foreground",
+                    )}
+                  />
 
-                <Button
-                  size="icon-xs"
-                  variant="ghost"
-                  title="Close console"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    closeConsoleForNode(nodeId);
-                  }}
-                  className="h-5 w-5 p-0 text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-opacity"
-                >
-                  <X className="w-2.5 h-2.5" />
-                </Button>
+                  <Button
+                    size="icon-xs"
+                    variant="ghost"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      closeConsoleForNode(nodeId);
+                    }}
+                    className="absolute inset-0 size-full transition-all opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto cursor-pointer"
+                  >
+                    <X className="size-3.5" />
+                  </Button>
+                </div>
+
+                <span className="truncate text-xs font-medium">{nodeName}</span>
               </div>
             );
           })}
 
-          {/* Plus icon button to open more node consoles */}
+          {overflowTabs.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="icon-xs" variant="outline">
+                  <HugeiconsIcon icon={EllipsisIcon} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56 p-1 shadow-lg">
+                <ScrollArea className="max-h-56">
+                  <div>
+                    {overflowTabs.map((nodeId) => {
+                      const node = nodes.find((n) => n.node_id === nodeId);
+                      const nodeName = node?.name || nodeId.substring(0, 8);
+                      const isActive = nodeId === activeConsoleNodeId;
+
+                      return (
+                        <DropdownMenuItem
+                          key={nodeId}
+                          onClick={() => setActiveConsoleNodeId(nodeId)}
+                          className={cn(
+                            "flex items-center justify-between gap-2 px-2 py-1.5 rounded-sm text-xs cursor-pointer group",
+                            isActive && "bg-muted font-medium text-foreground",
+                          )}
+                        >
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <HugeiconsIcon
+                              icon={ComputerTerminalIcon}
+                              className={cn(
+                                "size-3.5 shrink-0",
+                                isActive
+                                  ? "text-primary"
+                                  : "text-muted-foreground group-hover:text-foreground",
+                              )}
+                            />
+                            <span className="truncate text-xs">{nodeName}</span>
+                          </div>
+
+                          <Button
+                            size="icon-xs"
+                            variant="ghost"
+                            title="Close console"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              closeConsoleForNode(nodeId);
+                            }}
+                            className="size-5 p-0 opacity-60 hover:opacity-100 hover:bg-muted-foreground/20 text-muted-foreground hover:text-foreground shrink-0 rounded-xs flex items-center justify-center"
+                          >
+                            <X className="size-3" />
+                          </Button>
+                        </DropdownMenuItem>
+                      );
+                    })}
+                  </div>
+                </ScrollArea>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+
           <Popover open={addDropdownOpen} onOpenChange={setAddDropdownOpen}>
             <PopoverTrigger asChild>
-              <Button size="icon-xs" variant="outline" title="Open Node Console">
-                <Plus className="w-3.5 h-3.5" />
+              <Button size="icon-xs" variant="outline">
+                <Plus />
               </Button>
             </PopoverTrigger>
-            <PopoverContent align="start" className="w-auto p-0 shadow-lg">
+            <PopoverContent align="start" className="w-auto p-0">
               <AddConsoleDropdownContent onSelect={() => setAddDropdownOpen(false)} />
             </PopoverContent>
           </Popover>
         </div>
 
-        {/* Console Controls on the Right */}
-        <div className="flex items-center gap-0.5 shrink-0 pl-1 border-l border-border/60">
+        <div className="flex items-center gap-0.5 shrink-0">
           <Button
             size="icon-xs"
             variant="ghost"
@@ -427,17 +633,7 @@ export function ConsolePanel() {
             disabled={!activeConsoleNodeId || !activeNodeStarted}
             className="h-6 w-6 text-muted-foreground hover:text-foreground disabled:opacity-30"
           >
-            <RotateCw className="w-3.5 h-3.5" />
-          </Button>
-
-          <Button
-            size="icon-xs"
-            variant="ghost"
-            title={theme === "dark" ? "Switch to light terminal" : "Switch to dark terminal"}
-            onClick={toggleTheme}
-            className="h-6 w-6 text-muted-foreground hover:text-foreground"
-          >
-            {theme === "dark" ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+            <RotateCw />
           </Button>
 
           {activeConsoleNodeId && (
@@ -448,7 +644,7 @@ export function ConsolePanel() {
               onClick={() => terminalViewportRef.current?.clear()}
               className="h-6 w-6 text-muted-foreground hover:text-foreground"
             >
-              <Trash2 className="w-3.5 h-3.5" />
+              <Trash2 />
             </Button>
           )}
 
@@ -460,33 +656,28 @@ export function ConsolePanel() {
               onClick={closeAllConsoles}
               className="text-muted-foreground hover:text-destructive h-6 w-6"
             >
-              <X className="w-3.5 h-3.5" />
+              <X />
             </Button>
           )}
-
-          <Button
-            size="icon-xs"
-            variant="ghost"
-            title="Minimize Drawer"
-            onClick={() => setBottomPanelOpen(false)}
-            className="text-muted-foreground hover:text-foreground h-6 w-6"
-          >
-            <ChevronDown className="w-3.5 h-3.5" />
-          </Button>
         </div>
       </div>
 
       {/* Full-width Terminal Viewport Area */}
       <div className="flex-1 overflow-hidden min-w-0 h-full w-full">
         {activeConsoleNodeId && (
-          <TerminalViewport
-            key={activeConsoleNodeId}
-            ref={terminalViewportRef}
-            projectId={activeProjectId}
-            nodeId={activeConsoleNodeId}
-          />
+          <TabsContent
+            value={activeConsoleNodeId}
+            className="flex-1 overflow-hidden min-w-0 h-full w-full m-0 outline-none"
+          >
+            <TerminalViewport
+              key={activeConsoleNodeId}
+              ref={terminalViewportRef}
+              projectId={activeProjectId}
+              nodeId={activeConsoleNodeId}
+            />
+          </TabsContent>
         )}
       </div>
-    </div>
+    </Tabs>
   );
 }
