@@ -1,5 +1,6 @@
 import type {
 	AuthTokenResponse,
+	GNS3Drawing,
 	GNS3Link,
 	GNS3Node,
 	GNS3Project,
@@ -525,6 +526,51 @@ class GNS3ApiClient {
 				res.status,
 			);
 		}
+	}
+
+	// Drawings
+	public async getProjectDrawings(projectId: string): Promise<GNS3Drawing[]> {
+		return this.request<GNS3Drawing[]>(`/v3/projects/${projectId}/drawings`);
+	}
+
+	public async createDrawing(
+		projectId: string,
+		drawing: Partial<GNS3Drawing>,
+	): Promise<GNS3Drawing> {
+		const { project_id: _p, drawing_id: _d, ...payload } = drawing;
+		return this.request<GNS3Drawing>(`/v3/projects/${projectId}/drawings`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(payload),
+		});
+	}
+
+	public async updateDrawing(
+		projectId: string,
+		drawingId: string,
+		drawing: Partial<GNS3Drawing>,
+	): Promise<GNS3Drawing> {
+		const { project_id: _p, drawing_id: _d, ...payload } = drawing;
+		return this.request<GNS3Drawing>(
+			`/v3/projects/${projectId}/drawings/${drawingId}`,
+			{
+				method: "PUT",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(payload),
+			},
+		);
+	}
+
+	public async deleteDrawing(
+		projectId: string,
+		drawingId: string,
+	): Promise<void> {
+		return this.request<void>(
+			`/v3/projects/${projectId}/drawings/${drawingId}`,
+			{
+				method: "DELETE",
+			},
+		);
 	}
 }
 

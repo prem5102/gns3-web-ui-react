@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
+import { drawingKeys } from "@/features/drawings/use-drawings";
 import { linkKeys } from "@/features/links/use-links";
 import { nodeKeys } from "@/features/nodes/use-nodes";
 import { projectKeys } from "@/features/projects/use-projects";
@@ -103,6 +104,10 @@ export function useControllerNotifications(projectId: string | null) {
 						} else if (action.includes("link.")) {
 							queryClient.invalidateQueries({
 								queryKey: linkKeys.all(currentProjectId),
+							});
+						} else if (action.includes("drawing.")) {
+							queryClient.invalidateQueries({
+								queryKey: drawingKeys.all(currentProjectId),
 							});
 						} else if (action.includes("project.")) {
 							queryClient.invalidateQueries({ queryKey: projectKeys.all });

@@ -206,6 +206,17 @@ export const useUIStore = create<UIState>()(
 				rightPanelOpen: state.rightPanelOpen,
 				bottomPanelHeight: state.bottomPanelHeight,
 			}),
+			onRehydrateStorage: () => (state) => {
+				if (state && typeof document !== "undefined") {
+					if (state.theme === "dark") {
+						document.documentElement.classList.add("dark");
+						document.documentElement.classList.remove("light");
+					} else {
+						document.documentElement.classList.remove("dark");
+						document.documentElement.classList.add("light");
+					}
+				}
+			},
 		},
 	),
 );

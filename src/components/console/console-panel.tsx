@@ -13,7 +13,6 @@ import {
   useState,
 } from "react";
 import { AddConsoleDropdownContent } from "@/components/console/add-console-dropdown";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -324,11 +323,15 @@ export function ConsolePanel() {
   const terminalViewportRef = useRef<TerminalViewportHandle>(null);
 
   const [addDropdownOpen, setAddDropdownOpen] = useState(false);
+
   const [containerWidth, setContainerWidth] = useState<number>(0);
+
   const containerRef = useRef<HTMLDivElement>(null);
+
   const tabWidthsRef = useRef<Map<string, number>>(new Map());
 
   const activeNode = nodes.find((n) => n.node_id === activeConsoleNodeId);
+
   const activeNodeStarted = activeNode?.status === "started";
 
   // Automatically close the bottom drawer if all consoles are closed
@@ -527,7 +530,7 @@ export function ConsolePanel() {
           {overflowTabs.length > 0 && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button size="icon-xs" variant="outline">
+                <Button size="icon-xs" variant="outline" title="Overflow consoles">
                   <HugeiconsIcon icon={EllipsisIcon} />
                 </Button>
               </DropdownMenuTrigger>

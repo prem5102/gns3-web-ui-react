@@ -1,8 +1,10 @@
 import { SlidersHorizontal, X } from "lucide-react";
 import { DeviceProperties } from "@/components/device-panels/device-properties";
+import { DrawingProperties } from "@/components/device-panels/drawing-properties";
 import { LinkProperties } from "@/components/device-panels/link-properties";
 import { ProjectProperties } from "@/components/device-panels/project-properties";
 import { Button } from "@/components/ui/button";
+import { useProjectDrawings } from "@/features/drawings/use-drawings";
 import { useProjectLinks } from "@/features/links/use-links";
 import { useProjectNodes } from "@/features/nodes/use-nodes";
 import { useTopologyStore } from "@/stores/topology-store";
@@ -10,14 +12,18 @@ import { useUIStore } from "@/stores/ui-store";
 
 export function RightPanel() {
 	const { rightPanelOpen, setRightPanelOpen } = useUIStore();
-	const { activeProjectId, selectedNodeId, selectedLinkId } =
+	const { activeProjectId, selectedNodeId, selectedLinkId, selectedDrawingId } =
 		useTopologyStore();
 
 	const { data: nodes = [] } = useProjectNodes(activeProjectId);
 	const { data: links = [] } = useProjectLinks(activeProjectId);
+	const { data: drawings = [] } = useProjectDrawings(activeProjectId);
 
 	const selectedNode = nodes.find((n) => n.node_id === selectedNodeId);
 	const selectedLink = links.find((l) => l.link_id === selectedLinkId);
+	const selectedDrawing = drawings.find(
+		(d) => d.drawing_id === selectedDrawingId,
+	);
 
 	if (!rightPanelOpen) {
 		return (
@@ -46,7 +52,9 @@ export function RightPanel() {
 							? "Device Inspector"
 							: selectedLink
 								? "Link Inspector"
-								: "Project Overview"}
+								: selectedDrawing
+									? "Drawing Inspector"
+									: "Project Overview"}
 					</span>
 				</div>
 
@@ -75,14 +83,19 @@ export function RightPanel() {
 						link={selectedLink}
 						nodes={nodes}
 					/>
+				) : selectedDrawing ? (
+					<DrawingProperties
+						key={selectedDrawing.drawing_id}
+						drawing={selectedDrawing}
+					/>
 				) : activeProjectId ? (
 					<ProjectProperties projectId={activeProjectId} />
 				) : (
 					<div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground text-xs p-4">
 						<SlidersHorizontal className="w-8 h-8 opacity-30 mb-2" />
 						<p>
-							Select any device, connection, or project to inspect and modify
-							properties.
+							Select any device, connection, or drawing annotation to inspect
+							and modify properties.
 						</p>
 					</div>
 				)}

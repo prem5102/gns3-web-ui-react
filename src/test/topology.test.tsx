@@ -1,17 +1,28 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import {
 	applyNodeChanges,
+	Controls,
 	type Node,
 	type NodeChange,
+	ReactFlow,
 	ReactFlowProvider,
 } from "@xyflow/react";
 import { describe, expect, it, vi } from "vitest";
+import { CanvasToolbar } from "@/components/topology/canvas-toolbar";
 import { DeviceNode } from "@/components/topology/device-node";
+import { useUIStore } from "@/stores/ui-store";
 
 // Mock Query Client / Hooks
 vi.mock("@/features/nodes/use-nodes", () => ({
 	useStartNode: () => ({ mutate: vi.fn() }),
 	useStopNode: () => ({ mutate: vi.fn() }),
+	useStartAllNodes: () => ({ mutate: vi.fn(), isPending: false }),
+	useStopAllNodes: () => ({ mutate: vi.fn(), isPending: false }),
+	useProjectNodes: () => ({ data: [] }),
+}));
+
+vi.mock("@/features/drawings/use-drawings", () => ({
+	useCreateDrawing: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
 describe("Topology Live Dragging & Device Node", () => {
@@ -107,5 +118,85 @@ describe("Topology Live Dragging & Device Node", () => {
 
 		const finalNodes = applyNodeChanges(dragChanges2, updatedNodes);
 		expect(finalNodes[0].position).toEqual({ x: 120, y: 140 });
+	});
+
+	it("renders CanvasToolbar with theme toggle button and switches theme", () => {
+		useUIStore.setState({ theme: "dark" });
+		const { rerender } = render(
+			<ReactFlowProvider>
+				<CanvasToolbar />
+			</ReactFlowProvider>,
+		);
+
+		const themeBtn = screen.getByTitle("Switch to Light Mode");
+		expect(themeBtn).toBeDefined();
+
+		act(() => {
+			themeBtn.click();
+		});
+		expect(useUIStore.getState().theme).toBe("light");
+
+		rerender(
+			<ReactFlowProvider>
+				<CanvasToolbar />
+			</ReactFlowProvider>,
+		);
+		expect(screen.getByTitle("Switch to Dark Mode")).toBeDefined();
+	});
+
+	it("renders combined floating toolbar with node, canvas, drawing, and theme controls at top center", () => {
+		const { container } = render(
+			<ReactFlowProvider>
+				<CanvasToolbar />
+			</ReactFlowProvider>,
+		);
+
+		// Verified positioned at top-center
+		const toolbar = container.querySelector(".top-4.left-1\\/2.-translate-x-1\\/2");
+		expect(toolbar).not.toBeNull();
+
+		// Node controls
+		expect(screen.getByTitle("Start All Nodes")).toBeDefined();
+		expect(screen.getByTitle("Stop All Nodes")).toBeDefined();
+
+		// Canvas controls
+		expect(screen.getByTitle("Toggle Canvas Grid")).toBeDefined();
+		expect(screen.getByTitle("Toggle Snap to Grid")).toBeDefined();
+		expect(screen.getByTitle("Toggle Interface Labels")).toBeDefined();
+		expect(screen.getByTitle("Fit View")).toBeDefined();
+
+		// Drawing tools
+		expect(screen.getByTitle("Pointer / Select Tool (V)")).toBeDefined();
+		expect(screen.getByTitle("Draw Rectangle (R) - Click canvas to place")).toBeDefined();
+		expect(screen.getByTitle("Draw Ellipse / Circle (E) - Click canvas to place")).toBeDefined();
+		expect(screen.getByTitle("Add Text Annotation (T) - Click canvas to place")).toBeDefined();
+		expect(screen.getByTitle("Draw Line (L)")).toBeDefined();
+		expect(screen.getByTitle("Draw Flow Arrow (A)")).toBeDefined();
+		expect(screen.getByTitle("Draw Cloud Boundary (C)")).toBeDefined();
+		expect(screen.getByTitle("Freehand Sketch / Pencil (P)")).toBeDefined();
+	});
+
+	it("updates React Flow container dark class based on colorMode prop", () => {
+		const { container, rerender } = render(
+			<ReactFlowProvider>
+				<ReactFlow colorMode="dark">
+					<Controls />
+				</ReactFlow>
+			</ReactFlowProvider>,
+		);
+
+		const rfElement = container.querySelector(".react-flow");
+		expect(rfElement).toBeDefined();
+		expect(rfElement?.classList.contains("dark")).toBe(true);
+
+		rerender(
+			<ReactFlowProvider>
+				<ReactFlow colorMode="light">
+					<Controls />
+				</ReactFlow>
+			</ReactFlowProvider>,
+		);
+
+		expect(rfElement?.classList.contains("dark")).toBe(false);
 	});
 });

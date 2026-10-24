@@ -212,6 +212,31 @@ export interface GNS3Notification<T = unknown> {
 }
 
 // ==========================================
+// Drawings
+// ==========================================
+export interface GNS3Drawing {
+	drawing_id: string;
+	project_id: string;
+	x: number;
+	y: number;
+	z?: number;
+	locked?: boolean;
+	rotation?: number;
+	svg: string;
+}
+
+export const GNS3DrawingSchema = z.object({
+	drawing_id: z.string(),
+	project_id: z.string(),
+	x: z.number(),
+	y: z.number(),
+	z: z.number().optional(),
+	locked: z.boolean().optional(),
+	rotation: z.number().min(-359).max(360).optional(),
+	svg: z.string(),
+});
+
+// ==========================================
 // UI Connection & Configuration
 // ==========================================
 export interface ControllerConfig {

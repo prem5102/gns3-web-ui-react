@@ -162,9 +162,8 @@ export function BottomPanel() {
         onDoubleClick={handleDoubleClick}
         className="group absolute -top-1.5 inset-x-0 h-3 flex items-center justify-center cursor-row-resize z-30 touch-none select-none"
       >
-        {/* Subtle accent bar on hover / drag */}
         <div
-          className={`w-full h-[2px] transition-colors ${
+          className={`w-full h-0.5 transition-colors ${
             isDragging ? "bg-primary" : "bg-transparent group-hover:bg-primary/70"
           }`}
         />
@@ -177,23 +176,18 @@ export function BottomPanel() {
           }`}
         />
       </div>
+
       {/* Tab Navigation Header: Only show for Editor/Events, omitted when Consoles is active to avoid duplicate headers */}
       {activeBottomTab !== "consoles" && (
-        <div className="flex items-center justify-between px-3 border-b border-border/80 bg-muted/40 h-8 text-xs select-none">
-          <div className="flex items-center gap-1">
+        <div className="flex items-center justify-between border-b p-1.5 bg-card text-xs select-none">
+          <div className="flex items-center gap-1 px-4">
             {visibleTabs.map((tab) => {
               const Icon = tab.icon;
-              const isActive = activeBottomTab === tab.id;
               return (
-                <button
+                <div
                   key={tab.id}
-                  type="button"
+                  className="flex items-center gap-1.5"
                   onClick={() => setActiveBottomTab(tab.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-sm text-xs transition-colors font-medium ${
-                    isActive
-                      ? "bg-card text-foreground font-semibold shadow-xs"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                  }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
                   <span>{tab.label}</span>
@@ -202,7 +196,7 @@ export function BottomPanel() {
                       {tab.count}
                     </Badge>
                   )}
-                </button>
+                </div>
               );
             })}
           </div>
