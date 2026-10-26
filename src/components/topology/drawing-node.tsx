@@ -1,15 +1,16 @@
-import { NodeResizer, type NodeProps, type ResizeParams } from "@xyflow/react";
+import { type NodeProps, NodeResizer, type ResizeParams } from "@xyflow/react";
 import { Lock } from "lucide-react";
-import React, { memo, useCallback, useEffect, useState } from "react";
+import type React from "react";
+import { memo, useCallback, useEffect, useState } from "react";
 import {
 	generateTextSvg,
 	parseSvgContent,
 	updateSvgDimensions,
 } from "@/features/drawings/drawing-utils";
 import { useUpdateDrawing } from "@/features/drawings/use-drawings";
+import { cn } from "@/lib/utils";
 import { useTopologyStore } from "@/stores/topology-store";
 import type { GNS3Drawing } from "@/types/gns3";
-import { cn } from "@/lib/utils";
 
 export interface DrawingNodeData {
 	drawing: GNS3Drawing;

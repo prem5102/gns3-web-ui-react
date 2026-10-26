@@ -1,11 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { projectKeys } from "@/features/query-keys";
 import { gns3Api } from "@/lib/gns3-api";
 import { useUIStore } from "@/stores/ui-store";
 
-export const projectKeys = {
-	all: ["projects"] as const,
-	detail: (id: string) => ["projects", id] as const,
-};
+export { projectKeys };
 
 export function useProjects() {
 	return useQuery({
@@ -29,7 +27,12 @@ export function useCreateProject() {
 	const addEvent = useUIStore.getState().addEvent;
 
 	return useMutation({
-		mutationFn: (data: { name: string }) => gns3Api.createProject(data),
+		mutationFn: (data: {
+			name: string;
+			scene_width?: number;
+			scene_height?: number;
+			path?: string;
+		}) => gns3Api.createProject(data),
 		onSuccess: (project) => {
 			queryClient.invalidateQueries({ queryKey: projectKeys.all });
 			addEvent({

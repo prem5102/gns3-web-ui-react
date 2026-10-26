@@ -1,12 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { nodeKeys } from "@/features/nodes/use-nodes";
+import { nodeKeys, templateKeys } from "@/features/query-keys";
 import { gns3Api } from "@/lib/gns3-api";
 import { useUIStore } from "@/stores/ui-store";
 import type { GNS3Node } from "@/types/gns3";
 
-export const templateKeys = {
-	all: ["templates"] as const,
-};
+export { templateKeys };
 
 export function useTemplates() {
 	return useQuery({
@@ -33,8 +31,9 @@ export function useCreateNodeFromTemplate(projectId: string) {
 			name?: string;
 		}) => gns3Api.createNodeFromTemplate(projectId, templateId, { x, y, name }),
 		onSuccess: (node: GNS3Node) => {
-			queryClient.setQueryData<GNS3Node[]>(nodeKeys.all(projectId), (old) =>
-				old ? [...old, node] : [node],
+			queryClient.setQueryData<GNS3Node[]>(
+				nodeKeys.all(projectId),
+				(old?: GNS3Node[]) => (old ? [...old, node] : [node]),
 			);
 			addEvent({
 				level: "success",

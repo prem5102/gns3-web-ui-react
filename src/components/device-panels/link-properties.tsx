@@ -1,4 +1,15 @@
 import { ArrowRightLeft, Radio, RadioReceiver, Trash2 } from "lucide-react";
+import { useState } from "react";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,6 +31,8 @@ export function LinkProperties({ link, nodes }: LinkPropertiesProps) {
 	const startCaptureMutation = useStartLinkCapture(link.project_id);
 	const stopCaptureMutation = useStopLinkCapture(link.project_id);
 
+	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
 	const isCapturing = link.capturing;
 
 	const endpointA = link.nodes?.[0];
@@ -40,10 +53,7 @@ export function LinkProperties({ link, nodes }: LinkPropertiesProps) {
 	);
 
 	const handleDelete = () => {
-		if (confirm("Delete this network link?")) {
-			deleteMutation.mutate(link.link_id);
-			clearSelection();
-		}
+		setIsDeleteDialogOpen(true);
 	};
 
 	return (
@@ -70,7 +80,7 @@ export function LinkProperties({ link, nodes }: LinkPropertiesProps) {
 			{/* Endpoints */}
 			<div className="flex flex-col space-y-2 border border-border/60 rounded-md p-3 bg-muted/20">
 				<div className="flex items-center justify-between">
-					<span className="font-semibold text-foreground truncate max-w-[100px]">
+					<span className="font-semibold text-foreground truncate max-w-25">
 						{nodeA?.name || "Node A"}
 					</span>
 					<span className="font-mono text-primary font-medium">
@@ -83,7 +93,7 @@ export function LinkProperties({ link, nodes }: LinkPropertiesProps) {
 				</div>
 
 				<div className="flex items-center justify-between">
-					<span className="font-semibold text-foreground truncate max-w-[100px]">
+					<span className="font-semibold text-foreground truncate max-w-25">
 						{nodeB?.name || "Node B"}
 					</span>
 					<span className="font-mono text-primary font-medium">
@@ -137,6 +147,34 @@ export function LinkProperties({ link, nodes }: LinkPropertiesProps) {
 					<span>Delete Link</span>
 				</Button>
 			</div>
+
+			{/* Alert Dialog: Delete Link */}
+			<AlertDialog
+				open={isDeleteDialogOpen}
+				onOpenChange={setIsDeleteDialogOpen}
+			>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Delete network link</AlertDialogTitle>
+						<AlertDialogDescription>
+							Are you sure you want to delete the network link between{" "}
+							{nodeA?.name || "Node A"} and {nodeB?.name || "Node B"}?
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel>Cancel</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={() => {
+								deleteMutation.mutate(link.link_id);
+								clearSelection();
+								setIsDeleteDialogOpen(false);
+							}}
+						>
+							Delete Link
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</div>
 	);
 }

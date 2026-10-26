@@ -16,6 +16,10 @@ export type SidebarTab =
 	| "links"
 	| "consoles";
 export type BottomTab = "consoles" | "editor" | "events" | "logs";
+export type ControllerConnectionStatus =
+	| "connected"
+	| "connecting"
+	| "disconnected";
 
 interface UIState {
 	// Panels
@@ -33,6 +37,10 @@ interface UIState {
 	settingsModalOpen: boolean;
 	controllerUrl: string;
 	controllerUsername: string;
+
+	// Controller Connection Status (ephemeral)
+	controllerConnectionStatus: ControllerConnectionStatus;
+	setControllerConnectionStatus: (status: ControllerConnectionStatus) => void;
 
 	// Consoles & Editor
 	openConsoles: string[]; // nodeIds
@@ -82,6 +90,10 @@ export const useUIStore = create<UIState>()(
 			settingsModalOpen: false,
 			controllerUrl: "/api/gns3",
 			controllerUsername: "admin",
+
+			controllerConnectionStatus: "disconnected",
+			setControllerConnectionStatus: (controllerConnectionStatus) =>
+				set({ controllerConnectionStatus }),
 
 			openConsoles: [],
 			activeConsoleNodeId: null,

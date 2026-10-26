@@ -1,25 +1,11 @@
+import { Cpu, Info, Layers, Plus, Search, Server } from "lucide-react";
 import { useState } from "react";
-import {
-	Cpu,
-	Info,
-	Layers,
-	Plus,
-	Search,
-	Server,
-} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Dialog,
-	DialogContent,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useCreateNodeFromTemplate } from "@/features/templates/use-templates";
-import {
-	GNS3_SYMBOLS,
-	getSymbolUrl,
-	resolveNodeSymbol,
-} from "@/lib/symbols";
+import { GNS3_SYMBOLS, getSymbolUrl, resolveNodeSymbol } from "@/lib/symbols";
 import { useTopologyStore } from "@/stores/topology-store";
 import type { GNS3Template } from "@/types/gns3";
 
@@ -205,8 +191,8 @@ export function NodeModelModal({
 							<div className="p-2.5 rounded-lg border border-emerald-500/20 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
 								<Info className="w-4 h-4 shrink-0" />
 								<span>
-									Drag and drop this model from the Device Library directly onto the
-									canvas or click "Add to Topology" below.
+									Drag and drop this model from the Device Library directly onto
+									the canvas or click "Add to Topology" below.
 								</span>
 							</div>
 						</div>
@@ -278,7 +264,9 @@ export function NodeModelModal({
 							size="xs"
 							variant="default"
 							onClick={handleAddToCanvas}
-							disabled={!activeProjectId || createFromTemplateMutation.isPending}
+							disabled={
+								!activeProjectId || createFromTemplateMutation.isPending
+							}
 							className="gap-1.5"
 						>
 							<Plus className="w-3.5 h-3.5" />

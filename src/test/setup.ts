@@ -7,3 +7,17 @@ if (typeof window !== "undefined" && !window.ResizeObserver) {
 		disconnect() {}
 	} as unknown as typeof ResizeObserver;
 }
+
+if (typeof window !== "undefined" && !window.matchMedia) {
+	window.matchMedia = (query: string) =>
+		({
+			matches: false,
+			media: query,
+			onchange: null,
+			addListener: () => {},
+			removeListener: () => {},
+			addEventListener: () => {},
+			removeEventListener: () => {},
+			dispatchEvent: () => false,
+		}) as unknown as MediaQueryList;
+}

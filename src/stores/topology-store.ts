@@ -62,6 +62,7 @@ interface TopologyState {
 	isConnecting: boolean;
 	connectingSourceNodeId: string | null;
 	connectingSourcePort: ConnectingSourcePort | null;
+	connectingTargetNodeId: string | null;
 	linkDialogOpen: boolean;
 	pendingLinkConnection: {
 		sourceNodeId: string;
@@ -71,12 +72,16 @@ interface TopologyState {
 	// Context Menu
 	contextMenu: ContextMenuState | null;
 
+	// Hovered Node
+	hoveredNodeId: string | null;
+
 	// Actions
 	setActiveProjectId: (projectId: string | null) => void;
 	selectNode: (nodeId: string | null) => void;
 	selectLink: (linkId: string | null) => void;
 	selectDrawing: (drawingId: string | null) => void;
 	clearSelection: () => void;
+	setHoveredNodeId: (nodeId: string | null) => void;
 	setActiveDrawingTool: (tool: DrawingToolType | null) => void;
 	setDrawingDefaults: (defaults: Partial<DrawingDefaults>) => void;
 	setSnapToGrid: (snap: boolean) => void;
@@ -84,6 +89,7 @@ interface TopologyState {
 	setGridSize: (size: number) => void;
 	setShowInterfaceLabels: (show: boolean) => void;
 	startConnecting: (nodeId: string, port?: ConnectingSourcePort) => void;
+	setConnectingTargetNodeId: (nodeId: string | null) => void;
 	openLinkDialog: (sourceNodeId: string, targetNodeId: string) => void;
 	closeLinkDialog: () => void;
 	cancelConnecting: () => void;
@@ -106,7 +112,8 @@ export const useTopologyStore = create<TopologyState>((set) => ({
 		strokeStyle: "solid",
 		cornerRadius: 8,
 		fontSize: 14,
-		fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+		fontFamily:
+			"ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
 		fontWeight: "bold",
 		fontStyle: "normal",
 	},
@@ -119,10 +126,12 @@ export const useTopologyStore = create<TopologyState>((set) => ({
 	isConnecting: false,
 	connectingSourceNodeId: null,
 	connectingSourcePort: null,
+	connectingTargetNodeId: null,
 	linkDialogOpen: false,
 	pendingLinkConnection: null,
 
 	contextMenu: null,
+	hoveredNodeId: null,
 
 	setActiveProjectId: (projectId) =>
 		set({
@@ -131,7 +140,11 @@ export const useTopologyStore = create<TopologyState>((set) => ({
 			selectedLinkId: null,
 			selectedDrawingId: null,
 			isConnecting: false,
+			connectingSourceNodeId: null,
+			connectingSourcePort: null,
+			connectingTargetNodeId: null,
 			contextMenu: null,
+			hoveredNodeId: null,
 		}),
 
 	selectNode: (nodeId) =>
@@ -163,6 +176,8 @@ export const useTopologyStore = create<TopologyState>((set) => ({
 			contextMenu: null,
 		}),
 
+	setHoveredNodeId: (nodeId) => set({ hoveredNodeId: nodeId }),
+
 	setActiveDrawingTool: (tool) =>
 		set({
 			activeDrawingTool: tool,
@@ -186,6 +201,12 @@ export const useTopologyStore = create<TopologyState>((set) => ({
 			isConnecting: true,
 			connectingSourceNodeId: nodeId,
 			connectingSourcePort: port || null,
+			connectingTargetNodeId: null,
+		}),
+
+	setConnectingTargetNodeId: (nodeId) =>
+		set({
+			connectingTargetNodeId: nodeId,
 		}),
 
 	openLinkDialog: (sourceNodeId, targetNodeId) =>
@@ -193,6 +214,7 @@ export const useTopologyStore = create<TopologyState>((set) => ({
 			linkDialogOpen: true,
 			pendingLinkConnection: { sourceNodeId, targetNodeId },
 			isConnecting: false,
+			connectingTargetNodeId: null,
 		}),
 
 	closeLinkDialog: () =>
@@ -201,6 +223,7 @@ export const useTopologyStore = create<TopologyState>((set) => ({
 			pendingLinkConnection: null,
 			connectingSourceNodeId: null,
 			connectingSourcePort: null,
+			connectingTargetNodeId: null,
 		}),
 
 	cancelConnecting: () =>
@@ -208,6 +231,7 @@ export const useTopologyStore = create<TopologyState>((set) => ({
 			isConnecting: false,
 			connectingSourceNodeId: null,
 			connectingSourcePort: null,
+			connectingTargetNodeId: null,
 		}),
 
 	openContextMenu: (menu) => set({ contextMenu: menu }),

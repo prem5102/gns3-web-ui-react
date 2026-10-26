@@ -1,8 +1,15 @@
-import { ComputerTerminalIcon, EllipsisIcon, PlayIcon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
 import type { FitAddon } from "@xterm/addon-fit";
 import type { Terminal } from "@xterm/xterm";
-import { Plus, Power, RotateCw, Terminal as TerminalIcon, Trash2, X } from "lucide-react";
+import {
+  MoreHorizontal,
+  Play,
+  Plus,
+  Power,
+  RotateCw,
+  Terminal as TerminalIcon,
+  Trash2,
+  X,
+} from "lucide-react";
 import {
   forwardRef,
   useCallback,
@@ -294,7 +301,7 @@ const TerminalViewport = forwardRef<TerminalViewportHandle, TerminalViewportProp
               onClick={() => startNodeMutation.mutate(nodeId)}
               disabled={startNodeMutation.isPending}
             >
-              <HugeiconsIcon icon={PlayIcon} />
+              <Play className="size-3.5 fill-current" />
               <span>Start Node</span>
             </Button>
           </div>
@@ -482,6 +489,7 @@ export function ConsolePanel() {
 
             return (
               <div
+                key={nodeId}
                 ref={(el) => {
                   if (el) {
                     const rect = el.getBoundingClientRect();
@@ -499,8 +507,7 @@ export function ConsolePanel() {
                 )}
               >
                 <div className="relative size-3.5 flex items-center justify-center shrink-0">
-                  <HugeiconsIcon
-                    icon={ComputerTerminalIcon}
+                  <TerminalIcon
                     className={cn(
                       "size-3.5 shrink-0 transition-opacity group-hover:opacity-0",
                       isActive
@@ -531,7 +538,7 @@ export function ConsolePanel() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button size="icon-xs" variant="outline" title="Overflow consoles">
-                  <HugeiconsIcon icon={EllipsisIcon} />
+                  <MoreHorizontal className="size-3.5" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-56 p-1 shadow-lg">
@@ -552,8 +559,7 @@ export function ConsolePanel() {
                           )}
                         >
                           <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <HugeiconsIcon
-                              icon={ComputerTerminalIcon}
+                            <TerminalIcon
                               className={cn(
                                 "size-3.5 shrink-0",
                                 isActive

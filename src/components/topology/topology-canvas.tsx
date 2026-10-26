@@ -16,15 +16,8 @@ import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import "@xyflow/react/dist/style.css";
 
-import {
-	generateArrowSvg,
-	generateCloudSvg,
-	generateEllipseSvg,
-	generateLineSvg,
-	generatePenSvg,
-	generateRectangleSvg,
-	generateTextSvg,
-} from "@/features/drawings/drawing-utils";
+import { CanvasConnectionBanner } from "./canvas-connection-banner";
+import { CanvasDrawingLayer } from "./canvas-drawing-layer";
 import {
 	useCreateDrawing,
 	useDeleteDrawing,
@@ -34,6 +27,7 @@ import {
 import { useProjectLinks } from "@/features/links/use-links";
 import { useProjectNodes, useUpdateNode } from "@/features/nodes/use-nodes";
 import { useCreateNodeFromTemplate } from "@/features/templates/use-templates";
+import { cn } from "@/lib/utils";
 import { useTopologyStore } from "@/stores/topology-store";
 import { useUIStore } from "@/stores/ui-store";
 import type { GNS3Drawing, GNS3Link, GNS3Node } from "@/types/gns3";
@@ -42,7 +36,6 @@ import { DeviceNode } from "./device-node";
 import { DrawingNode } from "./drawing-node";
 import { LinkDialog } from "./link-dialog";
 import { TopologyEdge, type TopologyEdgeData } from "./topology-edge";
-import { cn } from "@/lib/utils";
 
 const EMPTY_NODES: GNS3Node[] = [];
 const EMPTY_LINKS: GNS3Link[] = [];
@@ -74,6 +67,11 @@ export function TopologyCanvas() {
 		snapToGrid,
 		gridSize,
 		openLinkDialog,
+		isConnecting,
+		connectingSourceNodeId,
+		connectingSourcePort,
+		setConnectingTargetNodeId,
+		cancelConnecting,
 	} = useTopologyStore();
 
 	const setRightPanelOpen = useUIStore((s) => s.setRightPanelOpen);
@@ -83,6 +81,10 @@ export function TopologyCanvas() {
 	const { data: gns3Links = EMPTY_LINKS } = useProjectLinks(activeProjectId);
 	const { data: gns3Drawings = EMPTY_DRAWINGS } =
 		useProjectDrawings(activeProjectId);
+
+	const connectingSourceNode = gns3Nodes.find(
+		(n) => n.node_id === connectingSourceNodeId,
+	);
 
 	const updateNodeMutation = useUpdateNode(activeProjectId || "");
 	const createFromTemplateMutation = useCreateNodeFromTemplate(
@@ -105,15 +107,6 @@ export function TopologyCanvas() {
 	const isDrawingMode = Boolean(
 		activeDrawingTool && activeDrawingTool !== "select",
 	);
-	const isMouseDownRef = useRef(false);
-	const [dragPreview, setDragPreview] = useState<{
-		startClient: { x: number; y: number };
-		currentClient: { x: number; y: number };
-		startFlow: { x: number; y: number };
-		currentFlow: { x: number; y: number };
-		flowPoints: Array<{ x: number; y: number }>;
-		clientPoints: Array<{ x: number; y: number }>;
-	} | null>(null);
 
 	// Track dragging to prevent background query refetches from overwriting active drags
 	const isDraggingRef = useRef(false);
@@ -251,6 +244,23 @@ export function TopologyCanvas() {
 				(l) => l.nodes && l.nodes.length >= 2,
 			);
 
+			// Group links by node pair to handle multiple connections between the same two nodes
+			const pairGroups = new Map<string, GNS3Link[]>();
+			for (const l of validLinks) {
+				const n1 = l.nodes[0]?.node_id;
+				const n2 = l.nodes[1]?.node_id;
+				if (!n1 || !n2) continue;
+				const pairKey = [n1, n2].sort().join("::");
+				const group = pairGroups.get(pairKey) || [];
+				group.push(l);
+				pairGroups.set(pairKey, group);
+			}
+
+			// Sort each group stably by link_id
+			for (const group of pairGroups.values()) {
+				group.sort((a, b) => a.link_id.localeCompare(b.link_id));
+			}
+
 			let hasChanges = prevEdges.length !== validLinks.length;
 
 			const nextEdges: Edge[] = validLinks.map((l) => {
@@ -289,6 +299,14 @@ export function TopologyCanvas() {
 
 				const isSelected = l.link_id === selectedLinkId;
 
+				const pairKey = [sourceEndpoint.node_id, targetEndpoint.node_id]
+					.sort()
+					.join("::");
+				const siblings = pairGroups.get(pairKey) || [l];
+				const totalLinks = siblings.length;
+				const linkIndex = siblings.findIndex((x) => x.link_id === l.link_id);
+				const isCanonical = sourceEndpoint.node_id < targetEndpoint.node_id;
+
 				const prevData = existing?.data as TopologyEdgeData | undefined;
 				if (
 					!existing ||
@@ -298,7 +316,10 @@ export function TopologyCanvas() {
 					prevData?.sourceLabel !== sourceLabel ||
 					prevData?.targetLabel !== targetLabel ||
 					prevData?.capturing !== l.capturing ||
-					prevData?.suspend !== l.suspend
+					prevData?.suspend !== l.suspend ||
+					prevData?.linkIndex !== linkIndex ||
+					prevData?.totalLinks !== totalLinks ||
+					prevData?.isCanonical !== isCanonical
 				) {
 					hasChanges = true;
 				}
@@ -308,6 +329,8 @@ export function TopologyCanvas() {
 					id: l.link_id,
 					source: sourceEndpoint.node_id,
 					target: targetEndpoint.node_id,
+					sourceHandle: "source",
+					targetHandle: "target",
 					type: "topologyEdge",
 					selected: isSelected,
 					data: {
@@ -316,6 +339,9 @@ export function TopologyCanvas() {
 						targetLabel,
 						capturing: l.capturing,
 						suspend: l.suspend,
+						linkIndex: linkIndex >= 0 ? linkIndex : 0,
+						totalLinks,
+						isCanonical,
 					},
 				};
 			});
@@ -363,9 +389,11 @@ export function TopologyCanvas() {
 					selectDrawing(null);
 				}
 			} else if (e.key === "Escape") {
+				if (isConnecting) {
+					cancelConnecting();
+					return;
+				}
 				setActiveDrawingTool(null);
-				setDragPreview(null);
-				isMouseDownRef.current = false;
 				clearSelection();
 			} else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "d") {
 				if (selectedDrawingId && activeProjectId) {
@@ -399,6 +427,8 @@ export function TopologyCanvas() {
 		selectDrawing,
 		setActiveDrawingTool,
 		clearSelection,
+		isConnecting,
+		cancelConnecting,
 	]);
 
 	// Handle React Flow node changes
@@ -523,205 +553,15 @@ export function TopologyCanvas() {
 		[openLinkDialog],
 	);
 
-	// Relative local point inside canvas wrapper
-	const getLocalPoint = (e: React.MouseEvent) => {
-		if (!containerRef.current) return { x: e.clientX, y: e.clientY };
-		const rect = containerRef.current.getBoundingClientRect();
-		return {
-			x: e.clientX - rect.left,
-			y: e.clientY - rect.top,
-		};
-	};
-
-	// Drawing Surface Interaction Handlers (Overrides React Flow pan during drawing)
-	const handleDrawingMouseDown = (e: React.MouseEvent) => {
-		if (e.button !== 0) return; // Left click only
-		e.stopPropagation();
-		isMouseDownRef.current = true;
-
-		const local = getLocalPoint(e);
-		const flow = screenToFlowPosition({ x: e.clientX, y: e.clientY });
-
-		setDragPreview({
-			startClient: local,
-			currentClient: local,
-			startFlow: flow,
-			currentFlow: flow,
-			clientPoints: [local],
-			flowPoints: [flow],
-		});
-	};
-
-	const handleDrawingMouseMove = (e: React.MouseEvent) => {
-		if (!isMouseDownRef.current || !dragPreview) return;
-		const local = getLocalPoint(e);
-		const flow = screenToFlowPosition({ x: e.clientX, y: e.clientY });
-
-		setDragPreview((prev) => {
-			if (!prev) return null;
-			return {
-				...prev,
-				currentClient: local,
-				currentFlow: flow,
-				clientPoints: [...prev.clientPoints, local],
-				flowPoints: [...prev.flowPoints, flow],
-			};
-		});
-	};
-
-	const handleDrawingMouseUp = (e: React.MouseEvent) => {
-		if (!isMouseDownRef.current) return;
-		isMouseDownRef.current = false;
-
-		if (!dragPreview || !activeProjectId) {
-			setDragPreview(null);
-			return;
-		}
-
-		const flowStart = dragPreview.startFlow;
-		const flowCurrent = screenToFlowPosition({ x: e.clientX, y: e.clientY });
-
-		const width = Math.round(Math.abs(flowCurrent.x - flowStart.x));
-		const height = Math.round(Math.abs(flowCurrent.y - flowStart.y));
-		const minX = Math.round(Math.min(flowStart.x, flowCurrent.x));
-		const minY = Math.round(Math.min(flowStart.y, flowCurrent.y));
-		const isClickOnly = width < 10 && height < 10;
-
-		let shapeX = minX;
-		let shapeY = minY;
-		let shapeWidth = Math.max(width, 20);
-		let shapeHeight = Math.max(height, 20);
-
-		let svg = "";
-		if (activeDrawingTool === "rectangle") {
-			if (isClickOnly) {
-				shapeWidth = 200;
-				shapeHeight = 120;
-				shapeX = Math.round(flowStart.x - 100);
-				shapeY = Math.round(flowStart.y - 60);
-			}
-			svg = generateRectangleSvg({
-				width: shapeWidth,
-				height: shapeHeight,
-				fill: drawingDefaults.fillColor,
-				fillOpacity: drawingDefaults.fillOpacity,
-				stroke: drawingDefaults.strokeColor,
-				strokeWidth: drawingDefaults.strokeWidth,
-				strokeStyle: drawingDefaults.strokeStyle,
-				cornerRadius: drawingDefaults.cornerRadius,
-			});
-		} else if (activeDrawingTool === "ellipse") {
-			if (isClickOnly) {
-				shapeWidth = 180;
-				shapeHeight = 120;
-				shapeX = Math.round(flowStart.x - 90);
-				shapeY = Math.round(flowStart.y - 60);
-			}
-			svg = generateEllipseSvg({
-				width: shapeWidth,
-				height: shapeHeight,
-				fill: drawingDefaults.fillColor,
-				fillOpacity: drawingDefaults.fillOpacity,
-				stroke: drawingDefaults.strokeColor,
-				strokeWidth: drawingDefaults.strokeWidth,
-				strokeStyle: drawingDefaults.strokeStyle,
-			});
-		} else if (activeDrawingTool === "text") {
-			shapeX = Math.round(flowStart.x);
-			shapeY = Math.round(flowStart.y);
-			svg = generateTextSvg({
-				text: "Annotation",
-				fontSize: drawingDefaults.fontSize,
-				fontFamily: drawingDefaults.fontFamily,
-				fontWeight: drawingDefaults.fontWeight,
-				fontStyle: drawingDefaults.fontStyle,
-				color: drawingDefaults.strokeColor,
-			});
-		} else if (activeDrawingTool === "line") {
-			if (isClickOnly) {
-				shapeWidth = 160;
-				shapeHeight = 40;
-				shapeX = Math.round(flowStart.x);
-				shapeY = Math.round(flowStart.y);
-			}
-			svg = generateLineSvg({
-				width: shapeWidth,
-				height: shapeHeight,
-				stroke: drawingDefaults.strokeColor,
-				strokeWidth: drawingDefaults.strokeWidth,
-				strokeStyle: drawingDefaults.strokeStyle,
-			});
-		} else if (activeDrawingTool === "arrow") {
-			if (isClickOnly) {
-				shapeWidth = 180;
-				shapeHeight = 40;
-				shapeX = Math.round(flowStart.x);
-				shapeY = Math.round(flowStart.y);
-			}
-			svg = generateArrowSvg({
-				width: shapeWidth,
-				height: shapeHeight,
-				stroke: drawingDefaults.strokeColor,
-				strokeWidth: drawingDefaults.strokeWidth,
-				strokeStyle: drawingDefaults.strokeStyle,
-			});
-		} else if (activeDrawingTool === "cloud") {
-			if (isClickOnly) {
-				shapeWidth = 220;
-				shapeHeight = 130;
-				shapeX = Math.round(flowStart.x - 110);
-				shapeY = Math.round(flowStart.y - 65);
-			} else {
-				shapeWidth = Math.max(shapeWidth, 40);
-				shapeHeight = Math.max(shapeHeight, 30);
-			}
-			svg = generateCloudSvg({
-				width: shapeWidth,
-				height: shapeHeight,
-				fill: drawingDefaults.fillColor,
-				fillOpacity: drawingDefaults.fillOpacity,
-				stroke: drawingDefaults.strokeColor,
-				strokeWidth: drawingDefaults.strokeWidth,
-				strokeStyle: drawingDefaults.strokeStyle,
-			});
-		} else if (activeDrawingTool === "pen") {
-			const points = dragPreview.flowPoints;
-			if (points.length < 2) {
-				shapeX = Math.round(flowStart.x);
-				shapeY = Math.round(flowStart.y);
-				svg = generatePenSvg({
-					points: [
-						{ x: 0, y: 0 },
-						{ x: 30, y: -20 },
-						{ x: 70, y: -10 },
-						{ x: 100, y: 15 },
-						{ x: 130, y: -5 },
-					],
-					stroke: drawingDefaults.strokeColor,
-					strokeWidth: drawingDefaults.strokeWidth + 1,
-				});
-			} else {
-				shapeX = minX;
-				shapeY = minY;
-				const relPoints = points.map((p) => ({
-					x: Math.round(p.x - minX),
-					y: Math.round(p.y - minY),
-				}));
-				svg = generatePenSvg({
-					points: relPoints,
-					stroke: drawingDefaults.strokeColor,
-					strokeWidth: drawingDefaults.strokeWidth + 1,
-				});
-			}
-		}
-
-		if (svg) {
+	const handleCreateDrawing = useCallback(
+		({ svg, x, y }: { svg: string; x: number; y: number }) => {
+			if (!activeProjectId) return;
 			createDrawingMutation.mutate(
 				{
 					project_id: activeProjectId,
 					svg,
-					x: shapeX,
-					y: shapeY,
+					x,
+					y,
 					z: 0,
 					rotation: 0,
 					locked: false,
@@ -735,11 +575,9 @@ export function TopologyCanvas() {
 					},
 				},
 			);
-		}
-
-		setDragPreview(null);
-		setActiveDrawingTool(null);
-	};
+		},
+		[activeProjectId, createDrawingMutation, selectDrawing, setRightPanelOpen],
+	);
 
 	return (
 		<div
@@ -754,139 +592,16 @@ export function TopologyCanvas() {
 			<CanvasToolbar />
 
 			{/* Interactive Drawing Mode Surface Overlay */}
-			{isDrawingMode && (
-				<div
-					className="absolute inset-0 z-10 cursor-crosshair select-none bg-transparent"
-					onMouseDown={handleDrawingMouseDown}
-					onMouseMove={handleDrawingMouseMove}
-					onMouseUp={handleDrawingMouseUp}
-					onContextMenu={(e) => {
-						e.preventDefault();
-						setDragPreview(null);
-						isMouseDownRef.current = false;
-						setActiveDrawingTool(null);
-					}}
-				>
-					{/* Live Drawing Rubberband Preview */}
-					{dragPreview && (
-						<svg
-							className="absolute inset-0 w-full h-full pointer-events-none"
-							style={{ overflow: "visible" }}
-						>
-							{activeDrawingTool === "rectangle" && (
-								<rect
-									x={Math.min(
-										dragPreview.startClient.x,
-										dragPreview.currentClient.x,
-									)}
-									y={Math.min(
-										dragPreview.startClient.y,
-										dragPreview.currentClient.y,
-									)}
-									width={Math.max(
-										Math.abs(
-											dragPreview.currentClient.x - dragPreview.startClient.x,
-										),
-										4,
-									)}
-									height={Math.max(
-										Math.abs(
-											dragPreview.currentClient.y - dragPreview.startClient.y,
-										),
-										4,
-									)}
-									rx={drawingDefaults.cornerRadius}
-									fill={drawingDefaults.fillColor}
-									fillOpacity={drawingDefaults.fillOpacity}
-									stroke={drawingDefaults.strokeColor}
-									strokeWidth={drawingDefaults.strokeWidth}
-									strokeDasharray="4,4"
-								/>
-							)}
-							{activeDrawingTool === "ellipse" && (
-								<ellipse
-									cx={
-										(dragPreview.startClient.x + dragPreview.currentClient.x) /
-										2
-									}
-									cy={
-										(dragPreview.startClient.y + dragPreview.currentClient.y) /
-										2
-									}
-									rx={Math.max(
-										Math.abs(
-											dragPreview.currentClient.x - dragPreview.startClient.x,
-										) / 2,
-										4,
-									)}
-									ry={Math.max(
-										Math.abs(
-											dragPreview.currentClient.y - dragPreview.startClient.y,
-										) / 2,
-										4,
-									)}
-									fill={drawingDefaults.fillColor}
-									fillOpacity={drawingDefaults.fillOpacity}
-									stroke={drawingDefaults.strokeColor}
-									strokeWidth={drawingDefaults.strokeWidth}
-									strokeDasharray="4,4"
-								/>
-							)}
-							{(activeDrawingTool === "line" ||
-								activeDrawingTool === "arrow") && (
-								<line
-									x1={dragPreview.startClient.x}
-									y1={dragPreview.startClient.y}
-									x2={dragPreview.currentClient.x}
-									y2={dragPreview.currentClient.y}
-									stroke={drawingDefaults.strokeColor}
-									strokeWidth={drawingDefaults.strokeWidth}
-									strokeDasharray="4,4"
-								/>
-							)}
-							{activeDrawingTool === "cloud" && (
-								<rect
-									x={Math.min(
-										dragPreview.startClient.x,
-										dragPreview.currentClient.x,
-									)}
-									y={Math.min(
-										dragPreview.startClient.y,
-										dragPreview.currentClient.y,
-									)}
-									width={Math.max(
-										Math.abs(
-											dragPreview.currentClient.x - dragPreview.startClient.x,
-										),
-										4,
-									)}
-									height={Math.max(
-										Math.abs(
-											dragPreview.currentClient.y - dragPreview.startClient.y,
-										),
-										4,
-									)}
-									rx={16}
-									fill={drawingDefaults.fillColor}
-									fillOpacity={drawingDefaults.fillOpacity}
-									stroke={drawingDefaults.strokeColor}
-									strokeWidth={drawingDefaults.strokeWidth}
-									strokeDasharray="4,4"
-								/>
-							)}
-							{activeDrawingTool === "pen" &&
-								dragPreview.clientPoints.length > 1 && (
-									<path
-										d={`M ${dragPreview.clientPoints.map((p) => `${p.x} ${p.y}`).join(" L ")}`}
-										fill="none"
-										stroke={drawingDefaults.strokeColor}
-										strokeWidth={drawingDefaults.strokeWidth + 1}
-									/>
-								)}
-						</svg>
-					)}
-				</div>
-			)}
+			<CanvasDrawingLayer
+				containerRef={containerRef}
+				isDrawingMode={isDrawingMode}
+				activeDrawingTool={activeDrawingTool}
+				drawingDefaults={drawingDefaults}
+				setActiveDrawingTool={setActiveDrawingTool}
+				screenToFlowPosition={screenToFlowPosition}
+				activeProjectId={activeProjectId}
+				onCreateDrawing={handleCreateDrawing}
+			/>
 
 			<ReactFlow
 				nodes={nodes}
@@ -907,6 +622,12 @@ export function TopologyCanvas() {
 				onConnect={onConnect}
 				onNodeClick={(_e, node) => {
 					if (isDrawingMode) return;
+					if (isConnecting) {
+						if (connectingSourceNodeId && connectingSourceNodeId !== node.id) {
+							setConnectingTargetNodeId(node.id);
+						}
+						return;
+					}
 					if (node.type === "drawingNode") {
 						const d = (node.data as { drawing?: GNS3Drawing })?.drawing;
 						if (d) {
@@ -924,7 +645,9 @@ export function TopologyCanvas() {
 					setRightPanelOpen(true);
 				}}
 				onPaneClick={() => {
-					if (!isDrawingMode) {
+					if (isConnecting) {
+						cancelConnecting();
+					} else if (!isDrawingMode) {
 						clearSelection();
 					}
 				}}
@@ -951,6 +674,14 @@ export function TopologyCanvas() {
 					className="shadow-md rounded-lg"
 				/>
 			</ReactFlow>
+
+			{/* Floating banner during interactive connection mode */}
+			<CanvasConnectionBanner
+				isConnecting={isConnecting}
+				sourceNode={connectingSourceNode}
+				sourcePort={connectingSourcePort}
+				onCancel={cancelConnecting}
+			/>
 
 			{/* Port Connection Modal */}
 			<LinkDialog />

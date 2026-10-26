@@ -115,7 +115,11 @@ class GNS3ApiClient {
 		options: RequestInit = {},
 		retryOnAuth = true,
 	): Promise<T> {
-		const url = `${this.baseUrl}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
+		let url = `${this.baseUrl}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
+		if (typeof window === "undefined" && url.startsWith("/")) {
+			const origin = process.env.BASE_URL || "http://localhost:3000";
+			url = `${origin}${url}`;
+		}
 		const headers = new Headers(options.headers || {});
 
 		if (this.authToken && !headers.has("Authorization")) {
@@ -280,7 +284,12 @@ class GNS3ApiClient {
 		return this.request<GNS3Project>(`/v3/projects/${projectId}`);
 	}
 
-	public async createProject(data: { name: string }): Promise<GNS3Project> {
+	public async createProject(data: {
+		name: string;
+		scene_width?: number;
+		scene_height?: number;
+		path?: string;
+	}): Promise<GNS3Project> {
 		return this.request<GNS3Project>("/v3/projects", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
@@ -297,6 +306,21 @@ class GNS3ApiClient {
 	public async closeProject(projectId: string): Promise<GNS3Project> {
 		return this.request<GNS3Project>(`/v3/projects/${projectId}/close`, {
 			method: "POST",
+		});
+	}
+
+	public async updateProject(
+		projectId: string,
+		data: {
+			name?: string;
+			auto_close?: boolean;
+			auto_open?: boolean;
+			auto_start?: boolean;
+		},
+	): Promise<GNS3Project> {
+		return this.request<GNS3Project>(`/v3/projects/${projectId}`, {
+			method: "PUT",
+			body: JSON.stringify(data),
 		});
 	}
 

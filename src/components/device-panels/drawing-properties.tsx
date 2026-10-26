@@ -4,23 +4,21 @@ import {
 	Copy,
 	Lock,
 	RotateCw,
-	Sliders,
 	Trash2,
-	Type,
 	Unlock,
 } from "lucide-react";
-import React, { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-	NETWORK_COLOR_PRESETS,
 	generateArrowSvg,
 	generateCloudSvg,
 	generateEllipseSvg,
 	generateLineSvg,
 	generateRectangleSvg,
 	generateTextSvg,
+	NETWORK_COLOR_PRESETS,
 	parseSvgContent,
 } from "@/features/drawings/drawing-utils";
 import {
@@ -199,16 +197,6 @@ export function DrawingProperties({ drawing }: DrawingPropertiesProps) {
 		});
 	};
 
-	// Change Z-Index
-	const handleZIndex = (delta: number) => {
-		if (!activeProjectId) return;
-		const newZ = (drawing.z ?? 0) + delta;
-		updateDrawingMutation.mutate({
-			drawingId: drawing.drawing_id,
-			data: { z: newZ },
-		});
-	};
-
 	// Preset apply
 	const applyPreset = (preset: (typeof NETWORK_COLOR_PRESETS)[0]) => {
 		setFill(preset.fill);
@@ -229,7 +217,7 @@ export function DrawingProperties({ drawing }: DrawingPropertiesProps) {
 					<span className="font-semibold capitalize text-foreground">
 						{parsed.type} Shape
 					</span>
-					<p className="text-[10px] text-muted-foreground font-mono truncate max-w-[150px]">
+					<p className="text-[10px] text-muted-foreground font-mono truncate max-w-37.5">
 						{drawing.drawing_id}
 					</p>
 				</div>

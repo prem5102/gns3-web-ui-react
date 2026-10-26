@@ -107,4 +107,31 @@ describe("useTopologyStore", () => {
 		expect(useTopologyStore.getState().linkDialogOpen).toBe(false);
 		expect(useTopologyStore.getState().pendingLinkConnection).toBeNull();
 	});
+
+	it("manages interactive connection mode lifecycle", () => {
+		useTopologyStore.getState().startConnecting("node-source", {
+			adapter_number: 0,
+			port_number: 1,
+			name: "FastEthernet0/1",
+		});
+		expect(useTopologyStore.getState().isConnecting).toBe(true);
+		expect(useTopologyStore.getState().connectingSourceNodeId).toBe(
+			"node-source",
+		);
+		expect(useTopologyStore.getState().connectingSourcePort?.name).toBe(
+			"FastEthernet0/1",
+		);
+		expect(useTopologyStore.getState().connectingTargetNodeId).toBeNull();
+
+		useTopologyStore.getState().setConnectingTargetNodeId("node-target");
+		expect(useTopologyStore.getState().connectingTargetNodeId).toBe(
+			"node-target",
+		);
+
+		useTopologyStore.getState().cancelConnecting();
+		expect(useTopologyStore.getState().isConnecting).toBe(false);
+		expect(useTopologyStore.getState().connectingSourceNodeId).toBeNull();
+		expect(useTopologyStore.getState().connectingSourcePort).toBeNull();
+		expect(useTopologyStore.getState().connectingTargetNodeId).toBeNull();
+	});
 });

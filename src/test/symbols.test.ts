@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
 	BUILTIN_NODE_MODELS,
 	GNS3_SYMBOLS,
-	SYMBOL_MAP,
 	getSymbolUrl,
 	resolveNodeSymbol,
+	SYMBOL_MAP,
 } from "@/lib/symbols";
 
 describe("GNS3 Symbols System", () => {

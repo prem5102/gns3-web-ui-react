@@ -11,7 +11,8 @@ import {
 	Square,
 	Type,
 } from "lucide-react";
-import React, { useRef } from "react";
+import type React from "react";
+import { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -22,17 +23,17 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-	NETWORK_COLOR_PRESETS,
 	generateImageSvg,
 	generateRectangleSvg,
+	NETWORK_COLOR_PRESETS,
 } from "@/features/drawings/drawing-utils";
 import { useCreateDrawing } from "@/features/drawings/use-drawings";
 import { useProjectNodes } from "@/features/nodes/use-nodes";
+import { cn } from "@/lib/utils";
 import {
 	type DrawingToolType,
 	useTopologyStore,
 } from "@/stores/topology-store";
-import { cn } from "@/lib/utils";
 
 export function DrawingTools() {
 	const {
@@ -361,4 +362,3 @@ export function DrawingTools() {
 export function DrawingToolbar() {
 	return null;
 }
-

@@ -9,6 +9,16 @@ import {
 	Trash2,
 } from "lucide-react";
 import { useState } from "react";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,6 +67,8 @@ export function DeviceProperties({
 		l.nodes?.some((endpoint) => endpoint.node_id === node.node_id),
 	);
 
+	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
 	const handleSaveName = () => {
 		if (name.trim() && name !== node.name) {
 			updateMutation.mutate({
@@ -68,10 +80,7 @@ export function DeviceProperties({
 	};
 
 	const handleDelete = () => {
-		if (confirm(`Are you sure you want to delete node "${node.name}"?`)) {
-			deleteMutation.mutate(node.node_id);
-			clearSelection();
-		}
+		setIsDeleteDialogOpen(true);
 	};
 
 	return (
@@ -85,7 +94,7 @@ export function DeviceProperties({
 					>
 						{node.status}
 					</Badge>
-					<span className="text-[10px] text-muted-foreground font-mono truncate max-w-[140px]">
+					<span className="text-[10px] text-muted-foreground font-mono truncate max-w-35">
 						{node.node_type}
 					</span>
 				</div>
@@ -109,7 +118,11 @@ export function DeviceProperties({
 									className="h-7 text-xs font-semibold"
 									autoFocus
 								/>
-								<Button size="icon-xs" variant="default" onClick={handleSaveName}>
+								<Button
+									size="icon-xs"
+									variant="default"
+									onClick={handleSaveName}
+								>
 									<Check className="w-3 h-3" />
 								</Button>
 							</div>
@@ -252,7 +265,7 @@ export function DeviceProperties({
 										{port.name}
 									</span>
 									<span
-										className={`font-mono text-[10px] truncate max-w-[120px] ${
+										className={`font-mono text-[10px] truncate max-w-30 ${
 											link
 												? "text-primary font-semibold"
 												: "text-muted-foreground"
@@ -284,6 +297,34 @@ export function DeviceProperties({
 					<span>Delete Node</span>
 				</Button>
 			</div>
+
+			{/* Alert Dialog: Delete Node */}
+			<AlertDialog
+				open={isDeleteDialogOpen}
+				onOpenChange={setIsDeleteDialogOpen}
+			>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Delete node</AlertDialogTitle>
+						<AlertDialogDescription>
+							Are you sure you want to delete node &quot;{node.name}&quot;? All
+							connected links will also be removed.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel>Cancel</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={() => {
+								deleteMutation.mutate(node.node_id);
+								clearSelection();
+								setIsDeleteDialogOpen(false);
+							}}
+						>
+							Delete Node
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</div>
 	);
 }
