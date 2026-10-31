@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, render, screen } from "@testing-library/react";
 import {
 	applyNodeChanges,
@@ -144,11 +145,16 @@ describe("Topology Live Dragging & Device Node", () => {
 	});
 
 	it("renders CanvasToolbar with theme toggle button and switches theme", () => {
+		const testQueryClient = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
 		useUIStore.setState({ theme: "dark" });
 		const { rerender } = render(
-			<ReactFlowProvider>
-				<CanvasToolbar />
-			</ReactFlowProvider>,
+			<QueryClientProvider client={testQueryClient}>
+				<ReactFlowProvider>
+					<CanvasToolbar />
+				</ReactFlowProvider>
+			</QueryClientProvider>,
 		);
 
 		const themeBtn = screen.getByTitle("Switch to Light Mode");
@@ -160,18 +166,25 @@ describe("Topology Live Dragging & Device Node", () => {
 		expect(useUIStore.getState().theme).toBe("light");
 
 		rerender(
-			<ReactFlowProvider>
-				<CanvasToolbar />
-			</ReactFlowProvider>,
+			<QueryClientProvider client={testQueryClient}>
+				<ReactFlowProvider>
+					<CanvasToolbar />
+				</ReactFlowProvider>
+			</QueryClientProvider>,
 		);
 		expect(screen.getByTitle("Switch to Dark Mode")).toBeDefined();
 	});
 
 	it("renders combined floating toolbar with node, canvas, drawing, and theme controls at top center", () => {
+		const testQueryClient = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
 		const { container } = render(
-			<ReactFlowProvider>
-				<CanvasToolbar />
-			</ReactFlowProvider>,
+			<QueryClientProvider client={testQueryClient}>
+				<ReactFlowProvider>
+					<CanvasToolbar />
+				</ReactFlowProvider>
+			</QueryClientProvider>,
 		);
 
 		// Verified positioned at top-center

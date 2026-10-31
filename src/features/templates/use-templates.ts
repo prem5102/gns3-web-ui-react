@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { nodeKeys, templateKeys } from "@/features/query-keys";
 import { gns3Api } from "@/lib/gns3-api";
 import { useUIStore } from "@/stores/ui-store";
-import type { GNS3Node } from "@/types/gns3";
+import type { GNS3Node, GNS3Template } from "@/types/gns3";
 
 export { templateKeys };
 
@@ -47,6 +47,28 @@ export function useCreateNodeFromTemplate(projectId: string) {
 				message: `Failed to create device: ${err.message}`,
 				source: "Topology",
 			});
+		},
+	});
+}
+
+export function useCreateTemplate() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: (data: Partial<GNS3Template>) => gns3Api.createTemplate(data),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: templateKeys.all });
+		},
+	});
+}
+
+export function useDeleteTemplate() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: (templateId: string) => gns3Api.deleteTemplate(templateId),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: templateKeys.all });
 		},
 	});
 }

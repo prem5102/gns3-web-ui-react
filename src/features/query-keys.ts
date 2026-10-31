@@ -34,6 +34,23 @@ export const queryKeys = {
 	templates: {
 		all: ["templates"] as const,
 	},
+	computes: {
+		all: ["computes"] as const,
+		detail: (computeId: string) => ["computes", computeId] as const,
+	},
+	statistics: {
+		all: ["statistics"] as const,
+	},
+	images: {
+		all: ["images"] as const,
+	},
+	access: {
+		users: ["access", "users"] as const,
+		roles: ["access", "roles"] as const,
+	},
+	snapshots: {
+		all: (projectId: string) => ["projects", projectId, "snapshots"] as const,
+	},
 } as const;
 
 // Backward-compatible individual key exports matching existing code contracts
@@ -59,6 +76,28 @@ export const drawingKeys = {
 
 export const templateKeys = {
 	all: queryKeys.templates.all,
+};
+
+export const computeKeys = {
+	all: queryKeys.computes.all,
+	detail: queryKeys.computes.detail,
+};
+
+export const statisticsKeys = {
+	all: queryKeys.statistics.all,
+};
+
+export const imageKeys = {
+	all: queryKeys.images.all,
+};
+
+export const accessKeys = {
+	users: queryKeys.access.users,
+	roles: queryKeys.access.roles,
+};
+
+export const snapshotKeys = {
+	all: queryKeys.snapshots.all,
 };
 
 export const controllerKeys = {
@@ -132,3 +171,47 @@ export const controllerMeQueryOptions = () =>
 		retry: false,
 		enabled: Boolean(gns3Api.getAuthToken()),
 	});
+
+export const computesQueryOptions = () =>
+	queryOptions({
+		queryKey: queryKeys.computes.all,
+		queryFn: () => gns3Api.getComputes(),
+		refetchInterval: 10000,
+	});
+
+export const statisticsQueryOptions = () =>
+	queryOptions({
+		queryKey: queryKeys.statistics.all,
+		queryFn: () => gns3Api.getStatistics(),
+		refetchInterval: 5000,
+	});
+
+export const imagesQueryOptions = () =>
+	queryOptions({
+		queryKey: queryKeys.images.all,
+		queryFn: () => gns3Api.getImages(),
+		refetchInterval: 15000,
+	});
+
+export const usersQueryOptions = () =>
+	queryOptions({
+		queryKey: queryKeys.access.users,
+		queryFn: () => gns3Api.getUsers(),
+		refetchInterval: 15000,
+	});
+
+export const rolesQueryOptions = () =>
+	queryOptions({
+		queryKey: queryKeys.access.roles,
+		queryFn: () => gns3Api.getRoles(),
+		staleTime: 60000,
+	});
+
+export const snapshotsQueryOptions = (projectId: string | null) =>
+	queryOptions({
+		queryKey: queryKeys.snapshots.all(projectId || ""),
+		queryFn: () => (projectId ? gns3Api.getSnapshots(projectId) : []),
+		enabled: Boolean(projectId),
+		refetchInterval: 10000,
+	});
+

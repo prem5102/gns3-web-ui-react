@@ -1,3 +1,4 @@
+import "@testing-library/jest-dom/vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import type React from "react";
@@ -106,7 +107,6 @@ describe("Project Schemas & Dialogs", () => {
 				show_interface_labels: false,
 				snap_to_grid: false,
 				grid_size: 20,
-				supplier: null,
 			};
 
 			renderWithQuery(
@@ -143,7 +143,6 @@ describe("Project Schemas & Dialogs", () => {
 				show_interface_labels: false,
 				snap_to_grid: false,
 				grid_size: 20,
-				supplier: null,
 			};
 
 			renderWithQuery(

@@ -1,6 +1,7 @@
 import {
 	Check,
 	FileCode2,
+	FolderOpen,
 	Network,
 	Play,
 	RotateCw,
@@ -9,6 +10,7 @@ import {
 	Trash2,
 } from "lucide-react";
 import { useState } from "react";
+import { NodeFileManagerDialog } from "@/components/files/node-file-manager-dialog";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -47,6 +49,7 @@ export function DeviceProperties({
 }: DevicePropertiesProps) {
 	const [name, setName] = useState(node.name);
 	const [isEditingName, setIsEditingName] = useState(false);
+	const [fileManagerOpen, setFileManagerOpen] = useState(false);
 
 	const startMutation = useStartNode(node.project_id);
 	const stopMutation = useStopNode(node.project_id);
@@ -199,6 +202,16 @@ export function DeviceProperties({
 					<FileCode2 className="w-3 h-3" />
 					<span>Config</span>
 				</Button>
+
+				<Button
+					size="xs"
+					variant="outline"
+					className="gap-1.5"
+					onClick={() => setFileManagerOpen(true)}
+				>
+					<FolderOpen className="w-3 h-3" />
+					<span>Files</span>
+				</Button>
 			</div>
 
 			{/* Console Information */}
@@ -325,6 +338,15 @@ export function DeviceProperties({
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>
+
+			{/* Node File Manager Dialog */}
+			<NodeFileManagerDialog
+				projectId={node.project_id}
+				nodeId={node.node_id}
+				nodeName={node.name}
+				open={fileManagerOpen}
+				onOpenChange={setFileManagerOpen}
+			/>
 		</div>
 	);
 }

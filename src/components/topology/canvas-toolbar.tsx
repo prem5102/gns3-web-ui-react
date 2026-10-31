@@ -2,6 +2,8 @@ import { useRouter } from "@tanstack/react-router";
 import { useReactFlow } from "@xyflow/react";
 import {
 	ArrowLeft,
+	Camera,
+	Download,
 	Grid,
 	Magnet,
 	Maximize2,
@@ -11,8 +13,11 @@ import {
 	Sun,
 	Tag,
 } from "lucide-react";
+import { useState } from "react";
+import { SnapshotsDialog } from "@/components/snapshots/snapshots-dialog";
 import { Button } from "@/components/ui/button";
 import { useStartAllNodes, useStopAllNodes } from "@/features/nodes/use-nodes";
+import { gns3Api } from "@/lib/gns3-api";
 import { cn } from "@/lib/utils";
 import { useTopologyStore } from "@/stores/topology-store";
 import { useUIStore } from "@/stores/ui-store";
@@ -21,6 +26,7 @@ import { DrawingTools } from "./drawing-toolbar";
 export function CanvasToolbar() {
 	const router = useRouter({ warn: false });
 	const { fitView } = useReactFlow();
+	const [snapshotsOpen, setSnapshotsOpen] = useState(false);
 	const theme = useUIStore((s) => s.theme);
 	const toggleTheme = useUIStore((s) => s.toggleTheme);
 	const controllerConnectionStatus = useUIStore(
@@ -39,6 +45,13 @@ export function CanvasToolbar() {
 
 	const startAllMutation = useStartAllNodes(activeProjectId || "");
 	const stopAllMutation = useStopAllNodes(activeProjectId || "");
+
+	const handleExportProject = () => {
+		if (activeProjectId) {
+			const url = gns3Api.getExportProjectUrl(activeProjectId);
+			window.open(url, "_blank");
+		}
+	};
 
 	const handleGoDashboard = () => {
 		if (router?.navigate) {
@@ -136,6 +149,30 @@ export function CanvasToolbar() {
 
 			<div className="w-px h-4 bg-border/60 mx-0.5 shrink-0" />
 
+			{/* Project Snapshots */}
+			<Button
+				size="icon-xs"
+				variant="ghost"
+				title="Project Snapshots"
+				onClick={() => setSnapshotsOpen(true)}
+				className="text-muted-foreground hover:text-foreground"
+			>
+				<Camera className="w-3.5 h-3.5" />
+			</Button>
+
+			{/* Export Project */}
+			<Button
+				size="icon-xs"
+				variant="ghost"
+				title="Export Portable Project (.gns3project)"
+				onClick={handleExportProject}
+				className="text-muted-foreground hover:text-foreground"
+			>
+				<Download className="w-3.5 h-3.5" />
+			</Button>
+
+			<div className="w-px h-4 bg-border/60 mx-0.5 shrink-0" />
+
 			{/* Theme Appearance Mode */}
 			<Button
 				size="icon-xs"
@@ -173,6 +210,13 @@ export function CanvasToolbar() {
 					{controllerConnectionStatus}
 				</span>
 			</div>
+
+			{/* Snapshots Dialog */}
+			<SnapshotsDialog
+				projectId={activeProjectId || ""}
+				open={snapshotsOpen}
+				onOpenChange={setSnapshotsOpen}
+			/>
 		</div>
 	);
 }

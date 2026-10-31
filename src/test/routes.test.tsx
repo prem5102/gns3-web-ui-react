@@ -97,7 +97,7 @@ describe("Route Migration: Projects & Lab Routes", () => {
 		// Verify project cards are rendered
 		expect(screen.getByText("BGP Lab")).toBeDefined();
 		expect(screen.getByText("OSPF Core")).toBeDefined();
-		expect(screen.getByText("All (2)")).toBeDefined();
+		expect(screen.getByText("Total Projects")).toBeDefined();
 
 		// Clicking "Open Lab" triggers navigation to /projects/$projectId
 		const openLabButtons = screen.getAllByRole("button", { name: /Open Lab/i });

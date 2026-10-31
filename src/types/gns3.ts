@@ -246,3 +246,164 @@ export interface ControllerConfig {
 	authToken: string | null;
 	refreshToken: string | null;
 }
+
+// ==========================================
+// Computes
+// ==========================================
+export interface ComputeCapabilities {
+	node_types: string[];
+	platform: string;
+	version: string;
+	cpus?: number;
+	memory?: number;
+	disk_size?: number;
+}
+
+export interface Compute {
+	capabilities?: ComputeCapabilities;
+	compute_id: string;
+	connected: boolean;
+	cpu_usage_percent?: number;
+	disk_usage_percent?: number;
+	host: string;
+	last_error?: string | null;
+	memory_usage_percent?: number;
+	name: string;
+	port: number;
+	protocol: string;
+	user?: string;
+}
+
+export interface ComputeCreate {
+	protocol: "http" | "https";
+	host: string;
+	port: number;
+	user?: string;
+	password?: string;
+	name?: string;
+}
+
+export interface ComputeUpdate {
+	protocol?: "http" | "https";
+	host?: string;
+	port?: number;
+	user?: string;
+	password?: string;
+	name?: string;
+}
+
+// ==========================================
+// Statistics & System Status
+// ==========================================
+export interface ResourceStatistics {
+	cpu_count?: number;
+	cpu_count_physical?: number;
+	cpu_model?: string;
+	cpu_usage_percent: number;
+	disk_free?: number;
+	disk_total?: number;
+	disk_usage_percent: number;
+	disk_used?: number;
+	load_average?: number[];
+	load_average_percent?: number[];
+	memory_free: number;
+	memory_total: number;
+	memory_usage_percent: number;
+	memory_used: number;
+	swap_free?: number;
+	swap_total?: number;
+	swap_usage_percent?: number;
+	swap_used?: number;
+}
+
+export interface ComputeStatistics {
+	compute_id: string;
+	compute_name: string;
+	statistics: ResourceStatistics;
+}
+
+export interface ProjectStats {
+	total: number;
+	opened: number;
+	closed: number;
+}
+
+export interface NodeStats {
+	total: number;
+	open_project_nodes?: number;
+	closed_project_nodes?: number;
+	by_type: Record<string, number>;
+	by_status: Record<string, number>;
+}
+
+export interface LinkStats {
+	total: number;
+	capturing: number;
+}
+
+export interface ControllerStatistics {
+	uptime_seconds?: number;
+	computes: ComputeStatistics[];
+	projects: ProjectStats;
+	nodes: NodeStats;
+	links: LinkStats;
+}
+
+// ==========================================
+// Images
+// ==========================================
+export interface GNS3Image {
+	filename: string;
+	path: string;
+	image_type: string;
+	image_size: number;
+	checksum?: string;
+	checksum_algorithm?: string;
+	created_at?: string;
+	updated_at?: string;
+	availability?: "unknown" | "available" | "missing" | "unavailable" | "invalid";
+	last_seen_at?: string;
+	last_verified_at?: string;
+	last_error?: string;
+}
+
+export interface ImageSyncJob {
+	job_id: string;
+	status: "queued" | "running" | "completed" | "partial" | "failed" | "cancelled" | "interrupted";
+	dry_run: boolean;
+	force_checksum: boolean;
+	counts?: Record<string, number>;
+	errors?: Array<{ path: string; reason: string }>;
+}
+
+// ==========================================
+// Access Management (RBAC)
+// ==========================================
+export interface GNS3Privilege {
+	privilege_id: string;
+	name: string;
+	description?: string;
+	created_at?: string;
+	updated_at?: string;
+}
+
+export interface GNS3Role {
+	role_id: string;
+	name: string;
+	description?: string;
+	is_builtin?: boolean;
+	privileges?: GNS3Privilege[];
+	created_at?: string;
+	updated_at?: string;
+}
+
+// ==========================================
+// Snapshots
+// ==========================================
+export interface GNS3Snapshot {
+	snapshot_id: string;
+	name: string;
+	created_at: number;
+	project_id: string;
+}
+

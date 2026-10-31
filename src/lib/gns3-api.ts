@@ -1,12 +1,20 @@
 import type {
 	AuthTokenResponse,
+	Compute,
+	ComputeCreate,
+	ComputeUpdate,
+	ControllerStatistics,
 	GNS3Drawing,
+	GNS3Image,
 	GNS3Link,
 	GNS3Node,
 	GNS3Project,
+	GNS3Role,
+	GNS3Snapshot,
 	GNS3Template,
 	GNS3User,
 	GNS3Version,
+	ImageSyncJob,
 } from "@/types/gns3";
 
 export class GNS3ApiError extends Error {
@@ -498,6 +506,20 @@ class GNS3ApiClient {
 		return this.request<GNS3Template[]>("/v3/templates");
 	}
 
+	public async createTemplate(data: Partial<GNS3Template>): Promise<GNS3Template> {
+		return this.request<GNS3Template>("/v3/templates", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(data),
+		});
+	}
+
+	public async deleteTemplate(templateId: string): Promise<void> {
+		return this.request<void>(`/v3/templates/${templateId}`, {
+			method: "DELETE",
+		});
+	}
+
 	// Node Files / Configs
 	public async getNodeFiles(
 		projectId: string,
@@ -595,6 +617,168 @@ class GNS3ApiClient {
 				method: "DELETE",
 			},
 		);
+	}
+
+	// ==========================================
+	// Computes
+	// ==========================================
+	public async getComputes(): Promise<Compute[]> {
+		return this.request<Compute[]>("/v3/computes");
+	}
+
+	public async getCompute(computeId: string): Promise<Compute> {
+		return this.request<Compute>(`/v3/computes/${computeId}`);
+	}
+
+	public async createCompute(data: ComputeCreate): Promise<Compute> {
+		return this.request<Compute>("/v3/computes", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(data),
+		});
+	}
+
+	public async updateCompute(
+		computeId: string,
+		data: ComputeUpdate,
+	): Promise<Compute> {
+		return this.request<Compute>(`/v3/computes/${computeId}`, {
+			method: "PUT",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(data),
+		});
+	}
+
+	public async deleteCompute(computeId: string): Promise<void> {
+		return this.request<void>(`/v3/computes/${computeId}`, {
+			method: "DELETE",
+		});
+	}
+
+	public async connectCompute(computeId: string): Promise<void> {
+		return this.request<void>(`/v3/computes/${computeId}/connect`, {
+			method: "POST",
+		});
+	}
+
+	// ==========================================
+	// Statistics
+	// ==========================================
+	public async getStatistics(): Promise<ControllerStatistics> {
+		return this.request<ControllerStatistics>("/v3/statistics");
+	}
+
+	// ==========================================
+	// Images
+	// ==========================================
+	public async getImages(): Promise<GNS3Image[]> {
+		return this.request<GNS3Image[]>("/v3/images");
+	}
+
+	public async syncImages(
+		forceChecksum = false,
+		dryRun = false,
+	): Promise<ImageSyncJob> {
+		return this.request<ImageSyncJob>("/v3/images/sync", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ force_checksum: forceChecksum, dry_run: dryRun }),
+		});
+	}
+
+	public async pruneImages(): Promise<void> {
+		return this.request<void>("/v3/images/prune", {
+			method: "DELETE",
+		});
+	}
+
+	public async deleteImage(imagePath: string): Promise<void> {
+		return this.request<void>(`/v3/images/${encodeURIComponent(imagePath)}`, {
+			method: "DELETE",
+		});
+	}
+
+	// ==========================================
+	// Access (Users & Roles)
+	// ==========================================
+	public async getUsers(): Promise<GNS3User[]> {
+		return this.request<GNS3User[]>("/v3/access/users");
+	}
+
+	public async createUser(data: {
+		username: string;
+		password?: string;
+		email?: string;
+		full_name?: string;
+		is_active?: boolean;
+		is_superadmin?: boolean;
+	}): Promise<GNS3User> {
+		return this.request<GNS3User>("/v3/access/users", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(data),
+		});
+	}
+
+	public async deleteUser(userId: string): Promise<void> {
+		return this.request<void>(`/v3/access/users/${userId}`, {
+			method: "DELETE",
+		});
+	}
+
+	public async getRoles(): Promise<GNS3Role[]> {
+		return this.request<GNS3Role[]>("/v3/access/roles");
+	}
+
+	// ==========================================
+	// Snapshots
+	// ==========================================
+	public async getSnapshots(projectId: string): Promise<GNS3Snapshot[]> {
+		return this.request<GNS3Snapshot[]>(`/v3/projects/${projectId}/snapshots`);
+	}
+
+	public async createSnapshot(
+		projectId: string,
+		name: string,
+	): Promise<GNS3Snapshot> {
+		return this.request<GNS3Snapshot>(`/v3/projects/${projectId}/snapshots`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ name }),
+		});
+	}
+
+	public async restoreSnapshot(
+		projectId: string,
+		snapshotId: string,
+	): Promise<void> {
+		return this.request<void>(
+			`/v3/projects/${projectId}/snapshots/${snapshotId}/restore`,
+			{
+				method: "POST",
+			},
+		);
+	}
+
+	public async deleteSnapshot(
+		projectId: string,
+		snapshotId: string,
+	): Promise<void> {
+		return this.request<void>(
+			`/v3/projects/${projectId}/snapshots/${snapshotId}`,
+			{
+				method: "DELETE",
+			},
+		);
+	}
+
+	// ==========================================
+	// Project Export
+	// ==========================================
+	public getExportProjectUrl(projectId: string): string {
+		const token = this.authToken;
+		const query = token ? `?token=${encodeURIComponent(token)}` : "";
+		return `${this.baseUrl}/v3/projects/${projectId}/export${query}`;
 	}
 }
 
