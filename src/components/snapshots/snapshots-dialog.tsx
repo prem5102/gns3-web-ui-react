@@ -55,8 +55,11 @@ export function SnapshotsDialog({
 	const deleteSnapshotMutation = useDeleteSnapshot(projectId);
 
 	const [newSnapshotName, setNewSnapshotName] = useState("");
-	const [snapshotToRestore, setSnapshotToRestore] = useState<GNS3Snapshot | null>(null);
-	const [snapshotToDelete, setSnapshotToDelete] = useState<GNS3Snapshot | null>(null);
+	const [snapshotToRestore, setSnapshotToRestore] =
+		useState<GNS3Snapshot | null>(null);
+	const [snapshotToDelete, setSnapshotToDelete] = useState<GNS3Snapshot | null>(
+		null,
+	);
 	const [error, setError] = useState<string | null>(null);
 
 	const handleCreate = async (e: React.FormEvent) => {
@@ -99,7 +102,8 @@ export function SnapshotsDialog({
 							Project Snapshots
 						</DialogTitle>
 						<DialogDescription>
-							Save or restore checkpoints for topology &quot;{projectName || projectId}&quot;.
+							Save or restore checkpoints for topology &quot;
+							{projectName || projectId}&quot;.
 						</DialogDescription>
 					</DialogHeader>
 
@@ -122,35 +126,51 @@ export function SnapshotsDialog({
 							<Button
 								type="submit"
 								size="sm"
-								disabled={!newSnapshotName.trim() || createSnapshotMutation.isPending}
+								disabled={
+									!newSnapshotName.trim() || createSnapshotMutation.isPending
+								}
 								className="gap-1.5 shrink-0"
 							>
 								<Plus className="w-4 h-4" />
-								{createSnapshotMutation.isPending ? "Saving..." : "Take Snapshot"}
+								{createSnapshotMutation.isPending
+									? "Saving..."
+									: "Take Snapshot"}
 							</Button>
 						</form>
 
 						{/* Snapshots Table */}
-						<div className="rounded-lg border border-border/60 bg-card overflow-hidden">
+						<div className="rounded-md border border-border/60 bg-card overflow-hidden shadow-xs">
 							<Table>
-								<TableHeader>
+								<TableHeader className="bg-muted/40">
 									<TableRow>
-										<TableHead>Snapshot Name</TableHead>
-										<TableHead className="w-36">Created</TableHead>
-										<TableHead className="w-24 text-right">Actions</TableHead>
+										<TableHead className="text-xs font-semibold text-muted-foreground">
+											Snapshot Name
+										</TableHead>
+										<TableHead className="w-40 text-xs font-semibold text-muted-foreground">
+											Created
+										</TableHead>
+										<TableHead className="w-20 text-right text-xs font-semibold text-muted-foreground">
+											Actions
+										</TableHead>
 									</TableRow>
 								</TableHeader>
 								<TableBody>
 									{isLoading ? (
 										<TableRow>
-											<TableCell colSpan={3} className="h-24 text-center text-muted-foreground text-xs">
+											<TableCell
+												colSpan={3}
+												className="h-24 text-center text-muted-foreground text-xs"
+											>
 												<RefreshCw className="w-4 h-4 animate-spin inline mr-2 text-primary" />
 												Loading snapshots...
 											</TableCell>
 										</TableRow>
 									) : snapshots.length === 0 ? (
 										<TableRow>
-											<TableCell colSpan={3} className="h-24 text-center text-muted-foreground text-xs">
+											<TableCell
+												colSpan={3}
+												className="h-24 text-center text-muted-foreground text-xs"
+											>
 												No snapshots recorded yet.
 											</TableCell>
 										</TableRow>
@@ -193,7 +213,11 @@ export function SnapshotsDialog({
 					</div>
 
 					<DialogFooter>
-						<Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={() => onOpenChange(false)}
+						>
 							Close
 						</Button>
 					</DialogFooter>
@@ -209,7 +233,9 @@ export function SnapshotsDialog({
 					<AlertDialogHeader>
 						<AlertDialogTitle>Restore Snapshot</AlertDialogTitle>
 						<AlertDialogDescription>
-							Restoring &quot;{snapshotToRestore?.name}&quot; will revert the project canvas, node states, and configurations to this checkpoint. All running nodes will be stopped.
+							Restoring &quot;{snapshotToRestore?.name}&quot; will revert the
+							project canvas, node states, and configurations to this
+							checkpoint. All running nodes will be stopped.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
@@ -233,7 +259,8 @@ export function SnapshotsDialog({
 					<AlertDialogHeader>
 						<AlertDialogTitle>Delete Snapshot</AlertDialogTitle>
 						<AlertDialogDescription>
-							Are you sure you want to delete snapshot &quot;{snapshotToDelete?.name}&quot;? This cannot be undone.
+							Are you sure you want to delete snapshot &quot;
+							{snapshotToDelete?.name}&quot;? This cannot be undone.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>

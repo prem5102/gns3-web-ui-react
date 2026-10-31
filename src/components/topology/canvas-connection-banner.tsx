@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
-import type { GNS3Node } from "@/types/gns3";
 import type { ConnectingSourcePort } from "@/stores/topology-store";
+import type { GNS3Node } from "@/types/gns3";
 
 interface CanvasConnectionBannerProps {
 	isConnecting: boolean;

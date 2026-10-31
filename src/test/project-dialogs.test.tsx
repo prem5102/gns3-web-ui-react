@@ -114,7 +114,7 @@ describe("Project Schemas & Dialogs", () => {
 					project={sampleProject}
 					onOpenChange={vi.fn()}
 					onLaunchLab={vi.fn()}
-				/>
+				/>,
 			);
 
 			expect(screen.getByText("Project Details")).toBeInTheDocument();

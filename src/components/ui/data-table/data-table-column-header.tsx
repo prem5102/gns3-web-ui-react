@@ -1,7 +1,7 @@
-import type { RowData } from "@tanstack/react-table";
-import type { LegacyColumn as Column } from "@tanstack/react-table/legacy";
+import type { Column, RowData } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp, ChevronsUpDown, EyeOff } from "lucide-react";
 import type * as React from "react";
+
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -12,9 +12,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
+import type { DataTableFeatures } from "./data-table-features";
+
 interface DataTableColumnHeaderProps<TData extends RowData, TValue>
 	extends React.HTMLAttributes<HTMLDivElement> {
-	column: Column<TData, TValue>;
+	column: Column<DataTableFeatures, TData, TValue>;
 	title: string;
 }
 
@@ -28,7 +30,7 @@ export function DataTableColumnHeader<TData extends RowData, TValue>({
 	}
 
 	return (
-		<div className={cn("flex items-center space-x-2", className)}>
+		<div className={cn("flex items-center gap-2", className)}>
 			<DropdownMenu>
 				<DropdownMenuTrigger asChild>
 					<Button
@@ -38,32 +40,28 @@ export function DataTableColumnHeader<TData extends RowData, TValue>({
 					>
 						<span>{title}</span>
 						{column.getIsSorted() === "desc" ? (
-							<ArrowDown className="ml-2 h-3.5 w-3.5" />
+							<ArrowDown />
 						) : column.getIsSorted() === "asc" ? (
-							<ArrowUp className="ml-2 h-3.5 w-3.5" />
+							<ArrowUp />
 						) : (
-							<ChevronsUpDown className="ml-2 h-3.5 w-3.5 text-muted-foreground/70" />
+							<ChevronsUpDown />
 						)}
 					</Button>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent align="start">
 					<DropdownMenuItem onClick={() => column.toggleSorting(false)}>
-						<ArrowUp className="mr-2 h-3.5 w-3.5 text-muted-foreground/70" />
+						<ArrowUp />
 						Asc
 					</DropdownMenuItem>
 					<DropdownMenuItem onClick={() => column.toggleSorting(true)}>
-						<ArrowDown className="mr-2 h-3.5 w-3.5 text-muted-foreground/70" />
+						<ArrowDown />
 						Desc
 					</DropdownMenuItem>
-					{column.getCanHide() && (
-						<>
-							<DropdownMenuSeparator />
-							<DropdownMenuItem onClick={() => column.toggleVisibility(false)}>
-								<EyeOff className="mr-2 h-3.5 w-3.5 text-muted-foreground/70" />
-								Hide
-							</DropdownMenuItem>
-						</>
-					)}
+					<DropdownMenuSeparator />
+					<DropdownMenuItem onClick={() => column.toggleVisibility(false)}>
+						<EyeOff />
+						Hide
+					</DropdownMenuItem>
 				</DropdownMenuContent>
 			</DropdownMenu>
 		</div>

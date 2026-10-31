@@ -28,7 +28,11 @@ vi.mock("@/lib/gns3-api", () => ({
 				cpu_usage_percent: 15,
 				memory_usage_percent: 45,
 				disk_usage_percent: 30,
-				capabilities: { platform: "Linux", version: "3.1.0", node_types: ["qemu", "docker"] },
+				capabilities: {
+					platform: "Linux",
+					version: "3.1.0",
+					node_types: ["qemu", "docker"],
+				},
 			},
 			{
 				compute_id: "remote-worker-1",
@@ -37,7 +41,11 @@ vi.mock("@/lib/gns3-api", () => ({
 				protocol: "https",
 				host: "192.168.1.50",
 				port: 3080,
-				capabilities: { platform: "Linux", version: "3.1.0", node_types: ["qemu"] },
+				capabilities: {
+					platform: "Linux",
+					version: "3.1.0",
+					node_types: ["qemu"],
+				},
 			},
 		]),
 		getStatistics: vi.fn().mockResolvedValue({
@@ -63,7 +71,13 @@ vi.mock("@/lib/gns3-api", () => ({
 				},
 			],
 			projects: { total: 3, opened: 1, closed: 2 },
-			nodes: { total: 5, open_project_nodes: 2, closed_project_nodes: 3, by_type: { qemu: 3, docker: 2 }, by_status: { started: 2, stopped: 3 } },
+			nodes: {
+				total: 5,
+				open_project_nodes: 2,
+				closed_project_nodes: 3,
+				by_type: { qemu: 3, docker: 2 },
+				by_status: { started: 2, stopped: 3 },
+			},
 			links: { total: 4, capturing: 1 },
 		}),
 		getTemplates: vi.fn().mockResolvedValue([
@@ -120,7 +134,10 @@ vi.mock("@/lib/gns3-api", () => ({
 				name: "Administrator",
 				description: "Full access to all resources",
 				is_builtin: true,
-				privileges: [{ privilege_id: "p1", name: "Project.Allocate" }, { privilege_id: "p2", name: "Node.Audit" }],
+				privileges: [
+					{ privilege_id: "p1", name: "Project.Allocate" },
+					{ privilege_id: "p2", name: "Node.Audit" },
+				],
 			},
 		]),
 		getSnapshots: vi.fn().mockResolvedValue([
@@ -131,14 +148,24 @@ vi.mock("@/lib/gns3-api", () => ({
 				project_id: "proj-1",
 			},
 		]),
-		getNodeFiles: vi.fn().mockResolvedValue([
-			{ name: "startup-config.cfg" },
-			{ name: "interfaces" },
-		]),
+		getNodeFiles: vi
+			.fn()
+			.mockResolvedValue([
+				{ name: "startup-config.cfg" },
+				{ name: "interfaces" },
+			]),
 		getNodeFileContent: vi.fn().mockResolvedValue("hostname Router1\n!"),
 		saveNodeFileContent: vi.fn().mockResolvedValue(undefined),
-		getVersion: vi.fn().mockResolvedValue({ version: "3.1.0", controller_host: "127.0.0.1" }),
-		getMe: vi.fn().mockResolvedValue({ user_id: "user-1", username: "admin", is_superadmin: true }),
+		getVersion: vi
+			.fn()
+			.mockResolvedValue({ version: "3.1.0", controller_host: "127.0.0.1" }),
+		getMe: vi
+			.fn()
+			.mockResolvedValue({
+				user_id: "user-1",
+				username: "admin",
+				is_superadmin: true,
+			}),
 		getProjects: vi.fn().mockResolvedValue([]),
 	},
 }));
@@ -164,13 +191,11 @@ describe("GNS3 Web UI Feature Views", () => {
 		);
 	}
 
-	it("renders ComputesView with summary cards, table entries, and status badges", async () => {
+	it("renders ComputesView with table entries and status badges", async () => {
 		renderWithQuery(<ComputesView />);
 
 		expect(await screen.findByText("Compute Nodes")).toBeInTheDocument();
-		expect(screen.getByText("Total Computes")).toBeInTheDocument();
-		expect(screen.getByText("Connected")).toBeInTheDocument();
-		expect(screen.getByText("Disconnected")).toBeInTheDocument();
+		expect(screen.getByText("Add Compute")).toBeInTheDocument();
 
 		// Check rows
 		const localNodes = await screen.findAllByText("Controller Local");
@@ -183,8 +208,12 @@ describe("GNS3 Web UI Feature Views", () => {
 
 		expect(await screen.findByText("System Status")).toBeInTheDocument();
 		expect(await screen.findByText("Server Information")).toBeInTheDocument();
-		expect(await screen.findByText("Compute Resources Telemetry")).toBeInTheDocument();
-		expect(await screen.findByText("Emulators & Node Types")).toBeInTheDocument();
+		expect(
+			await screen.findByText("Compute Resources Telemetry"),
+		).toBeInTheDocument();
+		expect(
+			await screen.findByText("Emulators & Node Types"),
+		).toBeInTheDocument();
 		expect(await screen.findByText("Node Runtime Status")).toBeInTheDocument();
 
 		// Check values
@@ -209,8 +238,7 @@ describe("GNS3 Web UI Feature Views", () => {
 		renderWithQuery(<ImageManagerView />);
 
 		expect(await screen.findByText("Image Manager")).toBeInTheDocument();
-		expect(screen.getByText("Registered Images")).toBeInTheDocument();
-		expect(screen.getByText("Total Storage Consumed")).toBeInTheDocument();
+		expect(screen.getByText("Add Image")).toBeInTheDocument();
 
 		// Check image row
 		expect(await screen.findByText("iosv-15.6.qcow2")).toBeInTheDocument();

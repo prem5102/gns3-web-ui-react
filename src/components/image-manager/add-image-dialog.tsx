@@ -81,7 +81,9 @@ export function AddImageDialog({
 					onOpenChange(false);
 					setFile(null);
 				} else {
-					setErrorMessage(`Upload failed with HTTP ${xhr.status}: ${xhr.statusText}`);
+					setErrorMessage(
+						`Upload failed with HTTP ${xhr.status}: ${xhr.statusText}`,
+					);
 				}
 			};
 
@@ -114,7 +116,8 @@ export function AddImageDialog({
 				<DialogHeader>
 					<DialogTitle>Add Appliance Image</DialogTitle>
 					<DialogDescription>
-						Upload a virtual disk image (.qcow2, .img), IOS bin, or IOU image to the GNS3 storage library.
+						Upload a virtual disk image (.qcow2, .img), IOS bin, or IOU image to
+						the GNS3 storage library.
 					</DialogDescription>
 				</DialogHeader>
 
@@ -127,13 +130,21 @@ export function AddImageDialog({
 
 					<div className="space-y-1.5">
 						<Label htmlFor="image-type-select">Target Emulator Type</Label>
-						<Select value={imageType} onValueChange={setImageType} disabled={uploading}>
+						<Select
+							value={imageType}
+							onValueChange={setImageType}
+							disabled={uploading}
+						>
 							<SelectTrigger id="image-type-select">
 								<SelectValue placeholder="Select type" />
 							</SelectTrigger>
 							<SelectContent>
-								<SelectItem value="qemu">QEMU (qcow2, img, vmdk, iso)</SelectItem>
-								<SelectItem value="dynamips">Dynamips (Cisco IOS .bin, .image)</SelectItem>
+								<SelectItem value="qemu">
+									QEMU (qcow2, img, vmdk, iso)
+								</SelectItem>
+								<SelectItem value="dynamips">
+									Dynamips (Cisco IOS .bin, .image)
+								</SelectItem>
 								<SelectItem value="iou">IOS on Unix (IOU / IOL)</SelectItem>
 								<SelectItem value="docker">Docker Container tarball</SelectItem>
 							</SelectContent>

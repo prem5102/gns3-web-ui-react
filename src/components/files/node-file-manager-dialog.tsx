@@ -1,10 +1,4 @@
-import {
-	Download,
-	FileText,
-	FolderOpen,
-	RefreshCw,
-	Save,
-} from "lucide-react";
+import { Download, FileText, FolderOpen, RefreshCw, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -49,9 +43,7 @@ export function NodeFileManagerDialog({
 			const res = await gns3Api.getNodeFiles(projectId, nodeId);
 			setFiles(res || []);
 		} catch (err: unknown) {
-			setStatusMessage(
-				(err as Error).message || "Failed to load node files",
-			);
+			setStatusMessage((err as Error).message || "Failed to load node files");
 		} finally {
 			setIsLoading(false);
 		}
@@ -98,9 +90,7 @@ export function NodeFileManagerDialog({
 			);
 			setStatusMessage("File saved successfully");
 		} catch (err: unknown) {
-			setStatusMessage(
-				(err as Error).message || "Failed to save file content",
-			);
+			setStatusMessage((err as Error).message || "Failed to save file content");
 		} finally {
 			setIsSaving(false);
 		}
@@ -126,7 +116,8 @@ export function NodeFileManagerDialog({
 						Node File Manager
 					</DialogTitle>
 					<DialogDescription>
-						Browse configurations, startup scripts, and disk files for &quot;{nodeName || nodeId}&quot;.
+						Browse configurations, startup scripts, and disk files for &quot;
+						{nodeName || nodeId}&quot;.
 					</DialogDescription>
 				</DialogHeader>
 
@@ -140,7 +131,9 @@ export function NodeFileManagerDialog({
 					{/* Left File List */}
 					<div className="border-r border-border/60 bg-muted/20 flex flex-col">
 						<div className="p-2.5 border-b border-border/60 flex items-center justify-between">
-							<span className="text-xs font-semibold text-muted-foreground">Files</span>
+							<span className="text-xs font-semibold text-muted-foreground">
+								Files
+							</span>
 							<Button
 								size="icon-xs"
 								variant="ghost"
@@ -148,15 +141,21 @@ export function NodeFileManagerDialog({
 								disabled={isLoading}
 								title="Refresh File List"
 							>
-								<RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
+								<RefreshCw
+									className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`}
+								/>
 							</Button>
 						</div>
 
 						<div className="flex-1 overflow-y-auto p-1 space-y-0.5">
 							{isLoading ? (
-								<p className="p-4 text-xs text-muted-foreground text-center">Loading files...</p>
+								<p className="p-4 text-xs text-muted-foreground text-center">
+									Loading files...
+								</p>
 							) : files.length === 0 ? (
-								<p className="p-4 text-xs text-muted-foreground text-center">No files found on node.</p>
+								<p className="p-4 text-xs text-muted-foreground text-center">
+									No files found on node.
+								</p>
 							) : (
 								files.map((file) => (
 									<button
@@ -228,14 +227,20 @@ export function NodeFileManagerDialog({
 						) : (
 							<div className="flex-1 flex flex-col items-center justify-center text-muted-foreground p-6 text-center">
 								<FileText className="w-8 h-8 mb-2 stroke-1 opacity-50" />
-								<p className="text-xs font-medium">Select a file to inspect or edit</p>
+								<p className="text-xs font-medium">
+									Select a file to inspect or edit
+								</p>
 							</div>
 						)}
 					</div>
 				</div>
 
 				<DialogFooter>
-					<Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={() => onOpenChange(false)}
+					>
 						Close
 					</Button>
 				</DialogFooter>

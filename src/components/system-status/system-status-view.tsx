@@ -14,7 +14,10 @@ import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useControllerMe, useControllerVersion } from "@/features/controller/use-controller";
+import {
+	useControllerMe,
+	useControllerVersion,
+} from "@/features/controller/use-controller";
 import { useProjects } from "@/features/projects/use-projects";
 import { useSystemStatistics } from "@/features/system/use-system-status";
 import { gns3Api } from "@/lib/gns3-api";
@@ -33,13 +36,19 @@ function formatUptime(seconds?: number): string {
 	return parts.join(" ");
 }
 
-export function SystemStatusView({ onNavigateProjects }: { onNavigateProjects?: () => void }) {
+export function SystemStatusView({
+	onNavigateProjects,
+}: {
+	onNavigateProjects?: () => void;
+}) {
 	const { data: stats, isLoading, isFetching, refetch } = useSystemStatistics();
 	const { data: versionData } = useControllerVersion();
 	const { data: meData } = useControllerMe();
 	const { data: projects = [] } = useProjects();
 
-	const localCompute = stats?.computes?.find((c) => c.compute_id === "local") || stats?.computes?.[0];
+	const localCompute =
+		stats?.computes?.find((c) => c.compute_id === "local") ||
+		stats?.computes?.[0];
 	const rawStats = localCompute?.statistics;
 
 	const nodeTypes = useMemo(() => {
@@ -59,7 +68,8 @@ export function SystemStatusView({ onNavigateProjects }: { onNavigateProjects?: 
 				<div>
 					<h1 className="text-2xl font-bold tracking-tight">System Status</h1>
 					<p className="text-sm text-muted-foreground">
-						Real-time telemetry, resource utilization, and health metrics for the GNS3 controller.
+						Real-time telemetry, resource utilization, and health metrics for
+						the GNS3 controller.
 					</p>
 				</div>
 				<Button
@@ -69,7 +79,9 @@ export function SystemStatusView({ onNavigateProjects }: { onNavigateProjects?: 
 					disabled={isLoading || isFetching}
 					className="gap-2"
 				>
-					<RefreshCw className={`w-4 h-4 ${isFetching ? "animate-spin" : ""}`} />
+					<RefreshCw
+						className={`w-4 h-4 ${isFetching ? "animate-spin" : ""}`}
+					/>
 					Refresh Telemetry
 				</Button>
 			</div>
@@ -79,7 +91,9 @@ export function SystemStatusView({ onNavigateProjects }: { onNavigateProjects?: 
 				<Card className="border-border/60 shadow-xs">
 					<CardContent className="p-4 flex items-center justify-between">
 						<div className="space-y-1">
-							<p className="text-xs font-medium text-muted-foreground">Status</p>
+							<p className="text-xs font-medium text-muted-foreground">
+								Status
+							</p>
 							<div className="flex items-center gap-1.5 font-bold text-emerald-500">
 								<span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
 								Online
@@ -94,7 +108,9 @@ export function SystemStatusView({ onNavigateProjects }: { onNavigateProjects?: 
 				<Card className="border-border/60 shadow-xs">
 					<CardContent className="p-4 flex items-center justify-between">
 						<div className="space-y-1">
-							<p className="text-xs font-medium text-muted-foreground">Projects</p>
+							<p className="text-xs font-medium text-muted-foreground">
+								Projects
+							</p>
 							<p className="text-xl font-bold">
 								{stats?.projects?.opened ?? 0}{" "}
 								<span className="text-xs font-normal text-muted-foreground">
@@ -111,7 +127,9 @@ export function SystemStatusView({ onNavigateProjects }: { onNavigateProjects?: 
 				<Card className="border-border/60 shadow-xs">
 					<CardContent className="p-4 flex items-center justify-between">
 						<div className="space-y-1">
-							<p className="text-xs font-medium text-muted-foreground">Running Nodes</p>
+							<p className="text-xs font-medium text-muted-foreground">
+								Running Nodes
+							</p>
 							<p className="text-xl font-bold">
 								{stats?.nodes?.by_status?.started ?? 0}{" "}
 								<span className="text-xs font-normal text-muted-foreground">
@@ -145,8 +163,12 @@ export function SystemStatusView({ onNavigateProjects }: { onNavigateProjects?: 
 				<Card className="border-border/60 shadow-xs col-span-2 md:col-span-1">
 					<CardContent className="p-4 flex items-center justify-between">
 						<div className="space-y-1">
-							<p className="text-xs font-medium text-muted-foreground">Computes</p>
-							<p className="text-xl font-bold">{stats?.computes?.length ?? 1}</p>
+							<p className="text-xs font-medium text-muted-foreground">
+								Computes
+							</p>
+							<p className="text-xl font-bold">
+								{stats?.computes?.length ?? 1}
+							</p>
 						</div>
 						<div className="w-9 h-9 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center">
 							<Server className="w-4 h-4" />
@@ -171,24 +193,33 @@ export function SystemStatusView({ onNavigateProjects }: { onNavigateProjects?: 
 					<CardContent className="p-4 space-y-3 text-sm">
 						<div className="flex items-center justify-between py-1.5 border-b border-border/40">
 							<span className="text-muted-foreground">Controller Endpoint</span>
-							<span className="font-mono text-xs font-medium">{gns3Api.getBaseUrl()}</span>
+							<span className="font-mono text-xs font-medium">
+								{gns3Api.getBaseUrl()}
+							</span>
 						</div>
 						<div className="flex items-center justify-between py-1.5 border-b border-border/40">
 							<span className="text-muted-foreground">GNS3 Server Core</span>
-							<span className="font-medium">{versionData?.version || "3.1.0"}</span>
+							<span className="font-medium">
+								{versionData?.version || "3.1.0"}
+							</span>
 						</div>
 						<div className="flex items-center justify-between py-1.5 border-b border-border/40">
 							<span className="text-muted-foreground">Web UI Architecture</span>
-							<span className="font-medium">React 19 • TanStack Router & Query</span>
+							<span className="font-medium">
+								React 19 • TanStack Router & Query
+							</span>
 						</div>
 						<div className="flex items-center justify-between py-1.5 border-b border-border/40">
 							<span className="text-muted-foreground">Server Uptime</span>
-							<span className="font-medium">{formatUptime(stats?.uptime_seconds)}</span>
+							<span className="font-medium">
+								{formatUptime(stats?.uptime_seconds)}
+							</span>
 						</div>
 						<div className="flex items-center justify-between py-1.5">
 							<span className="text-muted-foreground">Active Session</span>
 							<span className="font-medium text-primary">
-								{meData?.username || "admin"} ({meData?.is_superadmin ? "Superadmin" : "User"})
+								{meData?.username || "admin"} (
+								{meData?.is_superadmin ? "Superadmin" : "User"})
 							</span>
 						</div>
 					</CardContent>
@@ -223,7 +254,9 @@ export function SystemStatusView({ onNavigateProjects }: { onNavigateProjects?: 
 										<span className="font-medium truncate">{project.name}</span>
 									</div>
 									<Badge
-										variant={project.status === "opened" ? "secondary" : "outline"}
+										variant={
+											project.status === "opened" ? "secondary" : "outline"
+										}
 										className={
 											project.status === "opened"
 												? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-xs"
@@ -247,7 +280,8 @@ export function SystemStatusView({ onNavigateProjects }: { onNavigateProjects?: 
 						Compute Resources Telemetry
 					</CardTitle>
 					<span className="text-xs text-muted-foreground">
-						{localCompute?.compute_name || "Controller Host"} ({rawStats?.cpu_model || "Host CPU"})
+						{localCompute?.compute_name || "Controller Host"} (
+						{rawStats?.cpu_model || "Host CPU"})
 					</span>
 				</CardHeader>
 				<CardContent className="p-6">
@@ -259,16 +293,21 @@ export function SystemStatusView({ onNavigateProjects }: { onNavigateProjects?: 
 									<Cpu className="w-4 h-4 text-primary" />
 									CPU Usage
 								</span>
-								<span className="font-bold">{rawStats?.cpu_usage_percent ?? 0}%</span>
+								<span className="font-bold">
+									{rawStats?.cpu_usage_percent ?? 0}%
+								</span>
 							</div>
 							<div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
 								<div
 									className="bg-primary h-2.5 rounded-full transition-all duration-500"
-									style={{ width: `${Math.min(100, rawStats?.cpu_usage_percent ?? 0)}%` }}
+									style={{
+										width: `${Math.min(100, rawStats?.cpu_usage_percent ?? 0)}%`,
+									}}
 								/>
 							</div>
 							<p className="text-xs text-muted-foreground">
-								{rawStats?.cpu_count || 1} Cores ({rawStats?.cpu_count_physical || 1} Physical)
+								{rawStats?.cpu_count || 1} Cores (
+								{rawStats?.cpu_count_physical || 1} Physical)
 							</p>
 						</div>
 
@@ -279,16 +318,21 @@ export function SystemStatusView({ onNavigateProjects }: { onNavigateProjects?: 
 									<Activity className="w-4 h-4 text-blue-500" />
 									Memory Usage
 								</span>
-								<span className="font-bold">{rawStats?.memory_usage_percent ?? 0}%</span>
+								<span className="font-bold">
+									{rawStats?.memory_usage_percent ?? 0}%
+								</span>
 							</div>
 							<div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
 								<div
 									className="bg-blue-500 h-2.5 rounded-full transition-all duration-500"
-									style={{ width: `${Math.min(100, rawStats?.memory_usage_percent ?? 0)}%` }}
+									style={{
+										width: `${Math.min(100, rawStats?.memory_usage_percent ?? 0)}%`,
+									}}
 								/>
 							</div>
 							<p className="text-xs text-muted-foreground">
-								{formatBytes(rawStats?.memory_used ?? 0)} / {formatBytes(rawStats?.memory_total ?? 0)}
+								{formatBytes(rawStats?.memory_used ?? 0)} /{" "}
+								{formatBytes(rawStats?.memory_total ?? 0)}
 							</p>
 						</div>
 
@@ -299,16 +343,21 @@ export function SystemStatusView({ onNavigateProjects }: { onNavigateProjects?: 
 									<HardDrive className="w-4 h-4 text-amber-500" />
 									Disk Usage
 								</span>
-								<span className="font-bold">{rawStats?.disk_usage_percent ?? 0}%</span>
+								<span className="font-bold">
+									{rawStats?.disk_usage_percent ?? 0}%
+								</span>
 							</div>
 							<div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
 								<div
 									className="bg-amber-500 h-2.5 rounded-full transition-all duration-500"
-									style={{ width: `${Math.min(100, rawStats?.disk_usage_percent ?? 0)}%` }}
+									style={{
+										width: `${Math.min(100, rawStats?.disk_usage_percent ?? 0)}%`,
+									}}
 								/>
 							</div>
 							<p className="text-xs text-muted-foreground">
-								{formatBytes(rawStats?.disk_used ?? 0)} / {formatBytes(rawStats?.disk_total ?? 0)}
+								{formatBytes(rawStats?.disk_used ?? 0)} /{" "}
+								{formatBytes(rawStats?.disk_total ?? 0)}
 							</p>
 						</div>
 					</div>
@@ -342,7 +391,10 @@ export function SystemStatusView({ onNavigateProjects }: { onNavigateProjects?: 
 							</div>
 						) : (
 							nodeTypes.map(([type, count]) => (
-								<div key={type} className="py-2 flex items-center justify-between text-sm">
+								<div
+									key={type}
+									className="py-2 flex items-center justify-between text-sm"
+								>
 									<span className="capitalize">{type.replace("_", " ")}</span>
 									<span className="font-mono font-semibold">{count}</span>
 								</div>
@@ -366,7 +418,10 @@ export function SystemStatusView({ onNavigateProjects }: { onNavigateProjects?: 
 							</div>
 						) : (
 							nodeStatuses.map(([status, count]) => (
-								<div key={status} className="py-2 flex items-center justify-between text-sm">
+								<div
+									key={status}
+									className="py-2 flex items-center justify-between text-sm"
+								>
 									<div className="flex items-center gap-2">
 										<span
 											className={`w-2 h-2 rounded-full ${

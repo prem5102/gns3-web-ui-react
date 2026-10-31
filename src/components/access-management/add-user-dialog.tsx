@@ -99,7 +99,8 @@ export function AddUserDialog({ open, onOpenChange }: AddUserDialogProps) {
 				<DialogHeader>
 					<DialogTitle>Add User Account</DialogTitle>
 					<DialogDescription>
-						Create a new account with access to the GNS3 controller and projects.
+						Create a new account with access to the GNS3 controller and
+						projects.
 					</DialogDescription>
 				</DialogHeader>
 
@@ -118,7 +119,8 @@ export function AddUserDialog({ open, onOpenChange }: AddUserDialogProps) {
 							value={username}
 							onChange={(e) => {
 								setUsername(e.target.value);
-								if (errors.username) setErrors((prev) => ({ ...prev, username: "" }));
+								if (errors.username)
+									setErrors((prev) => ({ ...prev, username: "" }));
 							}}
 						/>
 						{errors.username && (
@@ -135,7 +137,8 @@ export function AddUserDialog({ open, onOpenChange }: AddUserDialogProps) {
 							value={password}
 							onChange={(e) => {
 								setPassword(e.target.value);
-								if (errors.password) setErrors((prev) => ({ ...prev, password: "" }));
+								if (errors.password)
+									setErrors((prev) => ({ ...prev, password: "" }));
 							}}
 						/>
 						{errors.password && (
@@ -162,7 +165,8 @@ export function AddUserDialog({ open, onOpenChange }: AddUserDialogProps) {
 								value={email}
 								onChange={(e) => {
 									setEmail(e.target.value);
-									if (errors.email) setErrors((prev) => ({ ...prev, email: "" }));
+									if (errors.email)
+										setErrors((prev) => ({ ...prev, email: "" }));
 								}}
 							/>
 							{errors.email && (
@@ -177,7 +181,10 @@ export function AddUserDialog({ open, onOpenChange }: AddUserDialogProps) {
 							checked={isSuperadmin}
 							onCheckedChange={(checked) => setIsSuperadmin(Boolean(checked))}
 						/>
-						<Label htmlFor="user-superadmin" className="text-sm font-normal cursor-pointer">
+						<Label
+							htmlFor="user-superadmin"
+							className="text-sm font-normal cursor-pointer"
+						>
 							Grant Super Administrator privileges
 						</Label>
 					</div>

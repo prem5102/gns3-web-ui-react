@@ -16,8 +16,6 @@ import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import "@xyflow/react/dist/style.css";
 
-import { CanvasConnectionBanner } from "./canvas-connection-banner";
-import { CanvasDrawingLayer } from "./canvas-drawing-layer";
 import {
 	useCreateDrawing,
 	useDeleteDrawing,
@@ -31,6 +29,8 @@ import { cn } from "@/lib/utils";
 import { useTopologyStore } from "@/stores/topology-store";
 import { useUIStore } from "@/stores/ui-store";
 import type { GNS3Drawing, GNS3Link, GNS3Node } from "@/types/gns3";
+import { CanvasConnectionBanner } from "./canvas-connection-banner";
+import { CanvasDrawingLayer } from "./canvas-drawing-layer";
 import { CanvasToolbar } from "./canvas-toolbar";
 import { DeviceNode } from "./device-node";
 import { DrawingNode } from "./drawing-node";

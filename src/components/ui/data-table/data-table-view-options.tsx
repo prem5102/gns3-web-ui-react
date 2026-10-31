@@ -1,9 +1,6 @@
-import type { RowData } from "@tanstack/react-table";
-import type {
-	LegacyColumn as Column,
-	LegacyReactTable as Table,
-} from "@tanstack/react-table/legacy";
-import { SlidersHorizontal } from "lucide-react";
+import type { ReactTable, RowData } from "@tanstack/react-table";
+import { Settings2 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -14,8 +11,10 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+import type { DataTableFeatures } from "./data-table-features";
+
 interface DataTableViewOptionsProps<TData extends RowData> {
-	table: Table<TData>;
+	table: ReactTable<DataTableFeatures, TData>;
 }
 
 export function DataTableViewOptions<TData extends RowData>({
@@ -27,28 +26,26 @@ export function DataTableViewOptions<TData extends RowData>({
 				<Button
 					variant="outline"
 					size="sm"
-					className="ml-auto hidden h-8 lg:flex text-xs gap-1.5"
+					className="ml-auto hidden h-8 lg:flex"
 				>
-					<SlidersHorizontal className="h-3.5 w-3.5" />
-					<span>View</span>
+					<Settings2 className="mr-2 h-4 w-4" />
+					View
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end" className="w-37.5">
-				<DropdownMenuLabel className="text-xs">
-					Toggle columns
-				</DropdownMenuLabel>
+				<DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
 				<DropdownMenuSeparator />
 				{table
 					.getAllColumns()
 					.filter(
-						(column: Column<TData, unknown>) =>
+						(column) =>
 							typeof column.accessorFn !== "undefined" && column.getCanHide(),
 					)
-					.map((column: Column<TData, unknown>) => {
+					.map((column) => {
 						return (
 							<DropdownMenuCheckboxItem
 								key={column.id}
-								className="capitalize text-xs"
+								className="capitalize"
 								checked={column.getIsVisible()}
 								onCheckedChange={(value) => column.toggleVisibility(!!value)}
 							>

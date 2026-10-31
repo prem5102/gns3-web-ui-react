@@ -49,9 +49,18 @@ export function CreateTemplateDialog({
 }: CreateTemplateDialogProps) {
 	const createTemplateMutation = useCreateTemplate();
 	const [name, setName] = useState("");
-	const [category, setCategory] = useState<"router" | "switch" | "guest" | "firewall">("router");
+	const [category, setCategory] = useState<
+		"router" | "switch" | "guest" | "firewall"
+	>("router");
 	const [templateType, setTemplateType] = useState<
-		"qemu" | "docker" | "dynamips" | "vpcs" | "iou" | "ethernet_switch" | "ethernet_hub" | "cloud"
+		| "qemu"
+		| "docker"
+		| "dynamips"
+		| "vpcs"
+		| "iou"
+		| "ethernet_switch"
+		| "ethernet_hub"
+		| "cloud"
 	>("qemu");
 	const [defaultNameFormat, setDefaultNameFormat] = useState("{name}-{0}");
 	const [usage, setUsage] = useState("");
@@ -154,9 +163,9 @@ export function CreateTemplateDialog({
 							<Label htmlFor="template-category">Category</Label>
 							<Select
 								value={category}
-								onValueChange={(val: "router" | "switch" | "guest" | "firewall") =>
-									setCategory(val)
-								}
+								onValueChange={(
+									val: "router" | "switch" | "guest" | "firewall",
+								) => setCategory(val)}
 							>
 								<SelectTrigger id="template-category">
 									<SelectValue placeholder="Category" />
@@ -195,7 +204,9 @@ export function CreateTemplateDialog({
 									<SelectItem value="dynamips">Dynamips IOS</SelectItem>
 									<SelectItem value="iou">IOS on Unix (IOU)</SelectItem>
 									<SelectItem value="vpcs">VPCS Host</SelectItem>
-									<SelectItem value="ethernet_switch">Ethernet Switch</SelectItem>
+									<SelectItem value="ethernet_switch">
+										Ethernet Switch
+									</SelectItem>
 									<SelectItem value="ethernet_hub">Ethernet Hub</SelectItem>
 									<SelectItem value="cloud">Cloud Node</SelectItem>
 								</SelectContent>

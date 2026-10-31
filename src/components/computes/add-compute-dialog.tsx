@@ -34,7 +34,10 @@ interface AddComputeDialogProps {
 	onOpenChange: (open: boolean) => void;
 }
 
-export function AddComputeDialog({ open, onOpenChange }: AddComputeDialogProps) {
+export function AddComputeDialog({
+	open,
+	onOpenChange,
+}: AddComputeDialogProps) {
 	const createComputeMutation = useCreateCompute();
 	const [name, setName] = useState("");
 	const [host, setHost] = useState("127.0.0.1");
@@ -91,9 +94,7 @@ export function AddComputeDialog({ open, onOpenChange }: AddComputeDialogProps) 
 			reset();
 			onOpenChange(false);
 		} catch (err: unknown) {
-			setSubmitError(
-				(err as Error).message || "Failed to add compute node",
-			);
+			setSubmitError((err as Error).message || "Failed to add compute node");
 		}
 	};
 
@@ -111,7 +112,8 @@ export function AddComputeDialog({ open, onOpenChange }: AddComputeDialogProps) 
 				<DialogHeader>
 					<DialogTitle>Add Compute Node</DialogTitle>
 					<DialogDescription>
-						Connect a remote GNS3 compute server to distribute VM and container emulation workloads.
+						Connect a remote GNS3 compute server to distribute VM and container
+						emulation workloads.
 					</DialogDescription>
 				</DialogHeader>
 
@@ -214,7 +216,9 @@ export function AddComputeDialog({ open, onOpenChange }: AddComputeDialogProps) 
 							Cancel
 						</Button>
 						<Button type="submit" disabled={createComputeMutation.isPending}>
-							{createComputeMutation.isPending ? "Connecting..." : "Add Compute"}
+							{createComputeMutation.isPending
+								? "Connecting..."
+								: "Add Compute"}
 						</Button>
 					</DialogFooter>
 				</form>

@@ -31,32 +31,31 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table";
-import {
 	useDeleteTemplate,
 	useTemplates,
 } from "@/features/templates/use-templates";
 import { getSymbolUrl } from "@/lib/symbols";
 import type { GNS3Template } from "@/types/gns3";
 import { CreateTemplateDialog } from "./create-template-dialog";
+import { TemplatesDataTable } from "./table";
 
 export function TemplatesView() {
-	const { data: templates = [], isLoading, isFetching, refetch } = useTemplates();
+	const {
+		data: templates = [],
+		isLoading,
+		isFetching,
+		refetch,
+	} = useTemplates();
 	const deleteTemplateMutation = useDeleteTemplate();
 
 	const [scope, setScope] = useState<"all" | "custom" | "builtin">("all");
 	const [categoryFilter, setCategoryFilter] = useState<string>("all");
-	const [typeFilter, setTypeFilter] = useState<string>("all");
 	const [searchText, setSearchText] = useState("");
 	const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
 	const [createDialogOpen, setCreateDialogOpen] = useState(false);
-	const [templateToDelete, setTemplateToDelete] = useState<GNS3Template | null>(null);
+	const [templateToDelete, setTemplateToDelete] = useState<GNS3Template | null>(
+		null,
+	);
 
 	const customCount = useMemo(
 		() => templates.filter((t) => !t.builtin).length,
@@ -67,13 +66,22 @@ export function TemplatesView() {
 		[templates],
 	);
 
+	const categories = useMemo(() => {
+		const set = new Set<string>();
+		templates.forEach((t) => {
+			if (t.category) set.add(t.category);
+		});
+		return Array.from(set);
+	}, [templates]);
+
 	const filteredTemplates = useMemo(() => {
 		return templates.filter((tmpl) => {
 			const query = searchText.toLowerCase().trim();
 			const matchesSearch =
 				!query ||
 				tmpl.name.toLowerCase().includes(query) ||
-				(tmpl.template_type && tmpl.template_type.toLowerCase().includes(query)) ||
+				(tmpl.template_type &&
+					tmpl.template_type.toLowerCase().includes(query)) ||
 				(tmpl.category && tmpl.category.toLowerCase().includes(query)) ||
 				(tmpl.usage && tmpl.usage.toLowerCase().includes(query));
 
@@ -85,12 +93,9 @@ export function TemplatesView() {
 			const matchesCategory =
 				categoryFilter === "all" || tmpl.category === categoryFilter;
 
-			const matchesType =
-				typeFilter === "all" || tmpl.template_type === typeFilter;
-
-			return matchesSearch && matchesScope && matchesCategory && matchesType;
+			return matchesSearch && matchesScope && matchesCategory;
 		});
-	}, [templates, searchText, scope, categoryFilter, typeFilter]);
+	}, [templates, searchText, scope, categoryFilter]);
 
 	const handleDeleteConfirm = async () => {
 		if (templateToDelete) {
@@ -107,9 +112,12 @@ export function TemplatesView() {
 			{/* Top Header */}
 			<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
 				<div>
-					<h1 className="text-2xl font-bold tracking-tight">Appliance Templates</h1>
+					<h1 className="text-2xl font-bold tracking-tight">
+						Appliance Templates
+					</h1>
 					<p className="text-sm text-muted-foreground">
-						Device catalog blueprints for routers, switches, servers, and virtual appliances.
+						Device catalog blueprints for routers, switches, servers, and
+						virtual appliances.
 					</p>
 				</div>
 				<div className="flex items-center gap-2">
@@ -120,7 +128,9 @@ export function TemplatesView() {
 						disabled={isLoading || isFetching}
 						className="gap-2"
 					>
-						<RefreshCw className={`w-4 h-4 ${isFetching ? "animate-spin" : ""}`} />
+						<RefreshCw
+							className={`w-4 h-4 ${isFetching ? "animate-spin" : ""}`}
+						/>
 						Refresh
 					</Button>
 					<Button
@@ -171,71 +181,110 @@ export function TemplatesView() {
 				</Button>
 			</div>
 
-			{/* Toolbar & Filter Controls */}
-			<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-				<div className="relative flex-1 max-w-md">
-					<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-					<Input
-						placeholder="Search templates by name, type, or usage..."
-						value={searchText}
-						onChange={(e) => setSearchText(e.target.value)}
-						className="pl-9"
-					/>
+			{/* View Mode & Filter Controls for Grid Mode */}
+			{viewMode === "grid" && (
+				<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+					<div className="relative flex-1 max-w-md">
+						<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+						<Input
+							placeholder="Search by name, category, or type..."
+							value={searchText}
+							onChange={(e) => setSearchText(e.target.value)}
+							className="pl-9 h-8 text-xs"
+						/>
+					</div>
+
+					<div className="flex flex-wrap items-center gap-2">
+						<Select
+							value={scope}
+							onValueChange={(val: "all" | "custom" | "builtin") =>
+								setScope(val)
+							}
+						>
+							<SelectTrigger className="w-32 h-8 text-xs">
+								<SelectValue placeholder="Scope" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="all">All scopes</SelectItem>
+								<SelectItem value="custom">Custom only</SelectItem>
+								<SelectItem value="builtin">Built-in only</SelectItem>
+							</SelectContent>
+						</Select>
+
+						<Select value={categoryFilter} onValueChange={setCategoryFilter}>
+							<SelectTrigger className="w-32 h-8 text-xs">
+								<SelectValue placeholder="Category" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="all">All categories</SelectItem>
+								<SelectItem value="router">Router</SelectItem>
+								<SelectItem value="switch">Switch</SelectItem>
+								<SelectItem value="guest">Guest</SelectItem>
+								<SelectItem value="firewall">Firewall</SelectItem>
+							</SelectContent>
+						</Select>
+
+						<div className="border border-border/60 rounded-md p-0.5 flex items-center bg-muted/40">
+							<Button
+								size="icon-xs"
+								variant="secondary"
+								onClick={() => setViewMode("grid")}
+								className="h-6 w-6"
+								title="Grid View"
+							>
+								<Grid className="w-3.5 h-3.5" />
+							</Button>
+							<Button
+								size="icon-xs"
+								variant="ghost"
+								onClick={() => setViewMode("table")}
+								className="h-6 w-6"
+								title="Table View"
+							>
+								<List className="w-3.5 h-3.5" />
+							</Button>
+						</div>
+					</div>
 				</div>
+			)}
 
-				<div className="flex items-center gap-2">
-					<Select value={categoryFilter} onValueChange={setCategoryFilter}>
-						<SelectTrigger className="w-36">
-							<SelectValue placeholder="Category" />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="all">All categories</SelectItem>
-							<SelectItem value="router">Routers</SelectItem>
-							<SelectItem value="switch">Switches</SelectItem>
-							<SelectItem value="guest">End devices</SelectItem>
-							<SelectItem value="firewall">Security</SelectItem>
-						</SelectContent>
-					</Select>
-
-					<Select value={typeFilter} onValueChange={setTypeFilter}>
-						<SelectTrigger className="w-36">
-							<SelectValue placeholder="Type" />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="all">All types</SelectItem>
-							<SelectItem value="qemu">QEMU VM</SelectItem>
-							<SelectItem value="docker">Docker</SelectItem>
-							<SelectItem value="dynamips">Dynamips</SelectItem>
-							<SelectItem value="iou">IOU</SelectItem>
-							<SelectItem value="vpcs">VPCS</SelectItem>
-							<SelectItem value="ethernet_switch">Switch</SelectItem>
-							<SelectItem value="ethernet_hub">Hub</SelectItem>
-						</SelectContent>
-					</Select>
-
+			{viewMode === "table" && (
+				<div className="flex items-center justify-between pb-1">
+					<span className="text-xs text-muted-foreground">
+						Template Inventory ({templates.length})
+					</span>
 					<div className="border border-border/60 rounded-md p-0.5 flex items-center bg-muted/40">
 						<Button
 							size="icon-xs"
-							variant={viewMode === "grid" ? "secondary" : "ghost"}
+							variant="ghost"
 							onClick={() => setViewMode("grid")}
+							className="h-6 w-6"
 							title="Grid View"
 						>
 							<Grid className="w-3.5 h-3.5" />
 						</Button>
 						<Button
 							size="icon-xs"
-							variant={viewMode === "table" ? "secondary" : "ghost"}
+							variant="secondary"
 							onClick={() => setViewMode("table")}
+							className="h-6 w-6"
 							title="Table View"
 						>
 							<List className="w-3.5 h-3.5" />
 						</Button>
 					</div>
 				</div>
-			</div>
+			)}
 
 			{/* Template Listing Content */}
-			{isLoading ? (
+			{viewMode === "table" ? (
+				<TemplatesDataTable
+					data={templates}
+					categories={categories}
+					isLoading={isLoading}
+					onDelete={(t) => setTemplateToDelete(t)}
+				/>
+			) : isLoading ? (
 				<div className="py-24 text-center text-muted-foreground flex flex-col items-center justify-center gap-3">
 					<RefreshCw className="w-6 h-6 animate-spin text-primary" />
 					<p className="text-sm">Loading template catalog...</p>
@@ -245,7 +294,7 @@ export function TemplatesView() {
 					<Boxes className="w-10 h-10 text-muted-foreground/60 stroke-1" />
 					<p className="font-semibold text-foreground">No templates found</p>
 					<p className="text-xs text-muted-foreground max-w-sm">
-						{searchText || categoryFilter !== "all" || typeFilter !== "all" || scope !== "all"
+						{searchText || categoryFilter !== "all" || scope !== "all"
 							? "Try adjusting your search terms or filters to find device templates."
 							: "Create your first template or import an appliance to start building topologies."}
 					</p>
@@ -259,7 +308,7 @@ export function TemplatesView() {
 						Create Template
 					</Button>
 				</div>
-			) : viewMode === "grid" ? (
+			) : (
 				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
 					{filteredTemplates.map((template) => {
 						const symbolUrl = getSymbolUrl(template.symbol);
@@ -283,11 +332,15 @@ export function TemplatesView() {
 												)}
 											</div>
 											<div className="min-w-0 flex flex-col">
-												<span className="font-semibold text-sm truncate" title={template.name}>
+												<span
+													className="font-semibold text-sm truncate"
+													title={template.name}
+												>
 													{template.name}
 												</span>
 												<span className="text-xs text-muted-foreground capitalize">
-													{template.category} • {template.template_type || "emulator"}
+													{template.category} •{" "}
+													{template.template_type || "emulator"}
 												</span>
 											</div>
 										</div>
@@ -312,95 +365,22 @@ export function TemplatesView() {
 									)}
 
 									<div className="pt-2 flex items-center justify-between border-t border-border/40 text-xs">
-										<Badge variant={template.builtin ? "outline" : "secondary"} className="text-xs">
+										<Badge
+											variant={template.builtin ? "outline" : "secondary"}
+											className="text-xs"
+										>
 											{template.builtin ? "Built-in" : "Custom"}
 										</Badge>
 										<span className="text-muted-foreground text-xs font-mono">
-											{template.compute_id === "local" || !template.compute_id ? "local" : template.compute_id}
+											{template.compute_id === "local" || !template.compute_id
+												? "local"
+												: template.compute_id}
 										</span>
 									</div>
 								</CardContent>
 							</Card>
 						);
 					})}
-				</div>
-			) : (
-				<div className="rounded-lg border border-border/60 bg-card overflow-hidden shadow-xs">
-					<Table>
-						<TableHeader>
-							<TableRow>
-								<TableHead className="w-72">Template</TableHead>
-								<TableHead>Category</TableHead>
-								<TableHead>Emulator Type</TableHead>
-								<TableHead>Compute Node</TableHead>
-								<TableHead>Scope</TableHead>
-								<TableHead className="w-20 text-right">Actions</TableHead>
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{filteredTemplates.map((template) => {
-								const symbolUrl = getSymbolUrl(template.symbol);
-								return (
-									<TableRow key={template.template_id}>
-										<TableCell>
-											<div className="flex items-center gap-3">
-												<div className="w-8 h-8 rounded-md bg-muted/60 border border-border/40 flex items-center justify-center shrink-0 p-1">
-													{symbolUrl ? (
-														<img
-															src={symbolUrl}
-															alt={template.name}
-															className="w-full h-full object-contain"
-														/>
-													) : (
-														<Cpu className="w-4 h-4 text-muted-foreground" />
-													)}
-												</div>
-												<span className="font-semibold text-sm truncate">
-													{template.name}
-												</span>
-											</div>
-										</TableCell>
-										<TableCell>
-											<Badge variant="outline" className="capitalize text-xs">
-												{template.category}
-											</Badge>
-										</TableCell>
-										<TableCell>
-											<span className="font-mono text-xs">
-												{template.template_type || "default"}
-											</span>
-										</TableCell>
-										<TableCell>
-											<span className="text-xs text-muted-foreground font-mono">
-												{template.compute_id || "local"}
-											</span>
-										</TableCell>
-										<TableCell>
-											<Badge
-												variant={template.builtin ? "outline" : "secondary"}
-												className="text-xs"
-											>
-												{template.builtin ? "Built-in" : "Custom"}
-											</Badge>
-										</TableCell>
-										<TableCell className="text-right">
-											{!template.builtin && (
-												<Button
-													size="icon-xs"
-													variant="ghost"
-													className="text-destructive hover:bg-destructive/10"
-													onClick={() => setTemplateToDelete(template)}
-													title="Delete Template"
-												>
-													<Trash2 className="w-3.5 h-3.5" />
-												</Button>
-											)}
-										</TableCell>
-									</TableRow>
-								);
-							})}
-						</TableBody>
-					</Table>
 				</div>
 			)}
 
@@ -410,7 +390,7 @@ export function TemplatesView() {
 				onOpenChange={setCreateDialogOpen}
 			/>
 
-			{/* Delete Template Confirmation */}
+			{/* Delete Confirmation Dialog */}
 			<AlertDialog
 				open={Boolean(templateToDelete)}
 				onOpenChange={(open) => !open && setTemplateToDelete(null)}
@@ -419,7 +399,10 @@ export function TemplatesView() {
 					<AlertDialogHeader>
 						<AlertDialogTitle>Delete Template</AlertDialogTitle>
 						<AlertDialogDescription>
-							Are you sure you want to remove template &quot;{templateToDelete?.name}&quot;? Existing nodes created from this template will not be affected.
+							Are you sure you want to delete template &quot;
+							{templateToDelete?.name}&quot;? Existing topology nodes created
+							from this template will not be deleted, but no new nodes can be
+							instantiated from it.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>

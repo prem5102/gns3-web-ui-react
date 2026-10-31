@@ -17,10 +17,10 @@ interface CanvasDrawingLayerProps {
 	activeDrawingTool: DrawingToolType | null;
 	drawingDefaults: DrawingDefaults;
 	setActiveDrawingTool: (tool: DrawingToolType | null) => void;
-	screenToFlowPosition: (clientPos: {
+	screenToFlowPosition: (clientPos: { x: number; y: number }) => {
 		x: number;
 		y: number;
-	}) => { x: number; y: number };
+	};
 	activeProjectId: string | null;
 	onCreateDrawing: (params: { svg: string; x: number; y: number }) => void;
 }
@@ -272,14 +272,24 @@ export function CanvasDrawingLayer({
 				>
 					{activeDrawingTool === "rectangle" && (
 						<rect
-							x={Math.min(dragPreview.startClient.x, dragPreview.currentClient.x)}
-							y={Math.min(dragPreview.startClient.y, dragPreview.currentClient.y)}
+							x={Math.min(
+								dragPreview.startClient.x,
+								dragPreview.currentClient.x,
+							)}
+							y={Math.min(
+								dragPreview.startClient.y,
+								dragPreview.currentClient.y,
+							)}
 							width={Math.max(
-								Math.abs(dragPreview.currentClient.x - dragPreview.startClient.x),
+								Math.abs(
+									dragPreview.currentClient.x - dragPreview.startClient.x,
+								),
 								4,
 							)}
 							height={Math.max(
-								Math.abs(dragPreview.currentClient.y - dragPreview.startClient.y),
+								Math.abs(
+									dragPreview.currentClient.y - dragPreview.startClient.y,
+								),
 								4,
 							)}
 							rx={drawingDefaults.cornerRadius}
@@ -292,12 +302,8 @@ export function CanvasDrawingLayer({
 					)}
 					{activeDrawingTool === "ellipse" && (
 						<ellipse
-							cx={
-								(dragPreview.startClient.x + dragPreview.currentClient.x) / 2
-							}
-							cy={
-								(dragPreview.startClient.y + dragPreview.currentClient.y) / 2
-							}
+							cx={(dragPreview.startClient.x + dragPreview.currentClient.x) / 2}
+							cy={(dragPreview.startClient.y + dragPreview.currentClient.y) / 2}
 							rx={Math.max(
 								Math.abs(
 									dragPreview.currentClient.x - dragPreview.startClient.x,
@@ -330,14 +336,24 @@ export function CanvasDrawingLayer({
 					)}
 					{activeDrawingTool === "cloud" && (
 						<rect
-							x={Math.min(dragPreview.startClient.x, dragPreview.currentClient.x)}
-							y={Math.min(dragPreview.startClient.y, dragPreview.currentClient.y)}
+							x={Math.min(
+								dragPreview.startClient.x,
+								dragPreview.currentClient.x,
+							)}
+							y={Math.min(
+								dragPreview.startClient.y,
+								dragPreview.currentClient.y,
+							)}
 							width={Math.max(
-								Math.abs(dragPreview.currentClient.x - dragPreview.startClient.x),
+								Math.abs(
+									dragPreview.currentClient.x - dragPreview.startClient.x,
+								),
 								4,
 							)}
 							height={Math.max(
-								Math.abs(dragPreview.currentClient.y - dragPreview.startClient.y),
+								Math.abs(
+									dragPreview.currentClient.y - dragPreview.startClient.y,
+								),
 								4,
 							)}
 							rx={16}
